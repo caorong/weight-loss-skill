@@ -338,6 +338,12 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
     if mismatch:
         result["effective_current_mode_range"] = {k: list(v) for k, v in DIET_MODE_MACROS[effective_current].items()}
         result["detected_mode_range"] = {k: list(v) for k, v in DIET_MODE_MACROS[best_mode].items()}
+        # Add protein gram ranges (based on target_weight × multiplier range)
+        if target_weight:
+            cur_p = PROTEIN_RANGE.get(effective_current, (1.2, 1.6))
+            det_p = PROTEIN_RANGE.get(best_mode, (1.2, 1.6))
+            result["effective_current_mode_range"]["protein_g"] = [round(target_weight * cur_p[0]), round(target_weight * cur_p[1])]
+            result["detected_mode_range"]["protein_g"] = [round(target_weight * det_p[0]), round(target_weight * det_p[1])]
     return result
 
 
