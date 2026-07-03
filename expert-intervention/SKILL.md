@@ -51,7 +51,7 @@ The moment a file exists:
    dump multiple onto the user at once.
 3. **This intervention is the MAIN thread while active.** If the user's message
    relates to it, your wording and pacing follow the intervention. Heavy
-   calculation skills (e.g. periodic recalc) may be deferred until it closes —
+   calculation skills may be deferred until it closes —
    note `待补：…` in the 进度 block. Messages unrelated to the intervention go to
    their normal skill as usual (see `SKILL-ROUTING.md`).
 4. **A photo does NOT exempt you.** When the user sends a meal photo, the

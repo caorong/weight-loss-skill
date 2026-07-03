@@ -154,26 +154,6 @@ See `references/crud-operations.md`.
 - **Accept any common unit**: kg, lb, lbs, 斤 (=0.5 kg), 公斤.
 - **Fasting tag**: if user mentions empty stomach / morning weigh-in → note `fasting: true` in context.
 
-## Post-Save: Check Pending Recalc
-
-After every successful weight save (`save.action: "created"`), check if a periodic recalculation is pending:
-
-```bash
-python3 {skillsDir}/periodic-recalc/scripts/check-pending-recalc.py \
-  --workspace {workspaceDir}
-```
-
-If `should_trigger: true` → run the full periodic-recalc flow:
-
-```bash
-python3 {skillsDir}/periodic-recalc/scripts/periodic-recalc.py \
-  --workspace {workspaceDir} \
-  --planner-calc {skillsDir}/weight-loss-planner/scripts/planner-calc.py
-```
-
-Then compose the recalc results message per the `periodic-recalc` SKILL.md instructions.
-
-If `should_trigger: false` → do nothing (silent).
 
 ## References
 

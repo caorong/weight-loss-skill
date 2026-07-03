@@ -249,13 +249,6 @@ if should_create_type "report"; then
   queue_job "Weekly report" "Run weekly-report to generate this week's progress report." "0 21 * * 0" other
 fi
 
-# 4. Periodic recalc
-if should_create_type "other"; then
-  queue_job "Periodic recalc" "Run periodic-recalc skill: python3 {skillsDir}/periodic-recalc/scripts/periodic-recalc.py --workspace {workspaceDir} --planner-calc {skillsDir}/weight-loss-planner/scripts/planner-calc.py. Then run diet-mode-review.py if recalculated.
-
-⚠️ Output format: see Output Format (HARD RULE) at the top of periodic-recalc/SKILL.md" "10 21 * * 0" other
-fi
-
 # 5. Diet pattern detection
 if should_create_type "pattern" && [[ -n "$DINNER_TIME" ]]; then
   pattern_completed=$(get_automation_field "Pattern Detection Completed")
