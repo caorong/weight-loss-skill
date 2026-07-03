@@ -296,11 +296,8 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
     current_dist = _mode_distance(avg_p, avg_c, avg_f, effective_current,
                                   protein_g=avg_protein_g, target_weight=target_weight)
 
-    # Build candidate modes list — exclude Mediterranean/USDA for China users
-    candidate_modes = [
-        mode for mode in DIET_MODE_MACROS
-        if not (is_china and mode in ('mediterranean', 'usda'))
-    ]
+    # Only consider balanced and high_protein as switch targets
+    candidate_modes = ["balanced", "high_protein"]
 
     best_mode = None
     best_dist = float("inf")

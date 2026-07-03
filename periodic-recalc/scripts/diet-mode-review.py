@@ -224,12 +224,11 @@ def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: P
     best_match = None
     best_score = float('inf')
 
-    for mode_name, ranges in DIET_MODE_RANGES.items():
+    # Only consider balanced and high_protein as switch targets
+    for mode_name in ["balanced", "high_protein"]:
         if mode_name == current_mode:
             continue
-        # Skip Mediterranean and USDA for China users
-        if is_china and mode_name in ('mediterranean', 'usda'):
-            continue
+        ranges = DIET_MODE_RANGES[mode_name]
 
         c_mid = (ranges['carbs'][0] + ranges['carbs'][1]) / 2
         f_mid = (ranges['fat'][0] + ranges['fat'][1]) / 2
