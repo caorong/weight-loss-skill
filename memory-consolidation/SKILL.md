@@ -130,6 +130,24 @@ A topic-indexed knowledge base that captures patterns, key discussions, current
 conclusions, and follow-up items across 1 week to 1 month. Topics grow organically
 from conversations — they are NOT predefined.
 
+**⚠️ NEVER record structured operational state in memory.** These states have their
+own authoritative storage and change on their own schedule; memory copies of them
+go stale and mislead future decisions:
+
+- **Leave / pause / vacation state** — leave.json + lifecycle DB are the ONLY sources
+  of truth. Do NOT write "暂停到 X月X日" / "leave until July 2" / "on vacation" /
+  "user is frozen" or any date-bounded pause statement into medium-term.md or
+  long-term.md. If a leave conversation must be summarized, say only "用户曾请过假
+  (详见 leave.json 历史)" without dates or duration.
+- **Cron reminder schedule / job IDs** — openclaw cron store is authoritative.
+- **Lifecycle stage / days_silent / frozen** — lifecycle DB is authoritative.
+- **Current weight / meal calories / streak counts** — data/weight.json, data/meals/,
+  data/streak.json are authoritative.
+
+Rule of thumb: if a value is a **date, count, or boolean that changes with system
+events**, it belongs in structured storage, not memory. Memory records qualitative
+patterns and human context around those events, not the events' state.
+
 ### Structure
 
 Each topic follows this template:
