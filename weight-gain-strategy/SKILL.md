@@ -1,7 +1,7 @@
 ---
 name: weight-gain-strategy
 version: 1.0.0
-description: "Detect and respond to upward weight trends after weigh-ins or when the user asks why their weight is increasing. Use for: (1) consecutive weight increases detected by post-weigh-in deviation checks, (2) explicit weight-gain questions like 'why am I gaining weight' or '体重怎么涨了'. Provides graduated support from reassurance to cause analysis to temporary adjustment strategies. Do not use when emotional distress needs higher-priority support or when weight-focus should be avoided (history_of_ed / avoid_weight_focus flags)."
+description: "Detect and respond to upward weight trends after weigh-ins or when the user asks why their weight is increasing. Use for: (1) consecutive weight increases detected by post-weigh-in deviation checks, (2) explicit weight-gain questions like 'why am I gaining weight' or '体重怎么涨了'. Provides graduated support from reassurance to cause analysis to temporary adjustment strategies. This skill handles only the deep intervention for a sustained upward trend — it does NOT record weigh-ins or judge everyday trends; recording each reading and the routine encourage/noise/plateau judgment belong to weight-tracking, which hands off to this skill when deeper intervention is warranted. Do not use when emotional distress needs higher-priority support or when weight-focus should be avoided (history_of_ed / avoid_weight_focus flags)."
 metadata:
   openclaw:
     emoji: "mag"

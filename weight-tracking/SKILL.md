@@ -1,7 +1,7 @@
 ---
 name: weight-tracking
 version: 1.2.0
-description: "Track body weight with full CRUD operations, unit conversion, and trend analysis. Trigger when user reports weight, asks about weight trend, wants to correct a weight entry, or change their unit preference. Trigger phrases: 'I weigh...', '体重...', '称了一下...', 'my weight is...', 'change to pounds', '改成斤', 'weight trend', '体重趋势'. ANY message containing a weight number or weight change — regardless of context (e.g. '我XX斤', '掉了X斤', '称了XX', 'my weight is...') — MUST trigger this skill and be recorded into data/weight.json; never reply verbally without saving."
+description: "Track body weight with full CRUD operations, unit conversion, and trend analysis. Trigger when user reports weight, asks about weight trend, wants to correct a weight entry, or change their unit preference. Trigger phrases: 'I weigh...', '体重...', '称了一下...', 'my weight is...', 'change to pounds', '改成斤', 'weight trend', '体重趋势'. ANY message containing a weight number or weight change — regardless of context (e.g. '我XX斤', '掉了X斤', '称了XX', 'my weight is...') — MUST trigger this skill and be recorded into data/weight.json; never reply verbally without saving. This skill owns recording every weigh-in and judging the everyday trend (encourage / noise / plateau). When weight is on a sustained upward trend and needs deeper intervention (cause analysis or adjustment strategy), defer to weight-gain-strategy; do NOT do that cause-analysis work here."
 metadata:
   openclaw:
     emoji: "scales"
