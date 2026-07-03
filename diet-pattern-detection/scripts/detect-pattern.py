@@ -102,6 +102,34 @@ def _migrate_meals(meals: list) -> list:
     return [_migrate_meal(m) for m in meals]
 
 
+def _get_expected_meals(workspace: Path) -> int:
+    """Read expected meals per day from health-profile.md. Default 3."""
+    hp = workspace / "health-profile.md"
+    if not hp.exists():
+        return 3
+    try:
+        text = hp.read_text(encoding="utf-8")
+        m = re.search(r"Meals per Day:\*?\*?\s*(\d+)", text)
+        if m:
+            return int(m.group(1))
+    except Exception:
+        pass
+    return 3
+
+
+def _is_complete_day(meals: list, expected_meals: int) -> bool:
+    """A day is complete if distinct non-snack eaten meals >= expected_meals."""
+    meals = _migrate_meals(meals)
+    non_snack = set()
+    for meal in meals:
+        name = meal.get("meal_name", "").lower()
+        if name == "snack":
+            continue
+        if meal.get("eaten", True):
+            non_snack.add(name)
+    return len(non_snack) >= expected_meals
+
+
 # ---------------------------------------------------------------------------
 # Core logic
 # ---------------------------------------------------------------------------
@@ -260,6 +288,7 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
     # Derive workspace path from data_dir (workspace/data/meals -> workspace)
     workspace = Path(data_dir).parent.parent
     is_china = is_china_user(workspace)
+    expected_meals = _get_expected_meals(workspace)
 
     daily_splits: list[dict] = []
     for offset in range(7):
@@ -269,6 +298,8 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
             continue
         with open(path, "r", encoding="utf-8") as f:
             meals = json.load(f)
+        if not _is_complete_day(meals, expected_meals):
+            continue
         pcts = _calc_macro_pcts(meals)
         if pcts is not None:
             daily_splits.append({"date": day, **pcts})
