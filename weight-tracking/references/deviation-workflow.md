@@ -1,25 +1,25 @@
-# 体重趋势判断 — 模型自主决策
+# Weight Trend Judgment — Model Decides
 
-`save-and-check.py` 返回体重历史和上下文，模型自主判断是否需要干预。
+`save-and-check.py` returns weight history and context; the model decides on its own whether to intervene.
 
-## 返回字段
+## Returned Fields
 
-- `save`: 保存结果
-- `context.recent_weights`: 最近 14 条体重记录
-- `context.plan`: 计划信息（TDEE、目标体重、热量目标）
-- `context.active_strategy`: 是否有进行中的干预策略
-- `context.last_intervention_date`: 上次干预日期
+- `save`: the save result
+- `context.recent_weights`: the last 14 weight entries
+- `context.plan`: plan info (TDEE, target weight, calorie target)
+- `context.active_strategy`: whether an intervention strategy is currently running
+- `context.last_intervention_date`: date of the last intervention
 
-## 判断指南
+## Judgment Guide
 
-核心标准：**体重变化是否与用户目标方向一致，且偏离大概率是真实趋势而非日常波动。**
+The core test: **is the weight change moving in the same direction as the user's goal, and is any deviation a genuine trend rather than day-to-day noise?**
 
-体重每天自然波动 ±0.5-1kg（水分、钠、排便）。需要多天数据才能区分趋势和噪音。
+Weight swings ±0.5–1kg naturally every day (water, sodium, bowel movements). It takes several days of data to tell a trend apart from noise.
 
-- **与目标一致**（如减重目标，体重在降）→ 鼓励
-- **日常噪音**（1-2 天小幅波动，在正常范围内）→ 正常确认，不追问
-- **大概率真实偏离**（连续多天反方向、从低点明显回升超出波动范围）→ 安抚情绪 + 提一句问要不要看看原因。用户说好 → 读 `weight-gain-strategy/references/cause-check-flow.md`
-- **体重停滞**（14 天内体重基本没变化，波动范围很小）→ 温和询问用户要不要看看原因，用户说好 → 同样走 `cause-check-flow.md`
-- `active_strategy.active: true` → 不重复干预
-- `last_intervention_date` 在 7 天内 → 不重复干预（包括停滞询问和偏离询问后都会记录）
-- **只在 80% 以上信心认为偏离是真实的时候才提。不必要的询问也是打扰。**
+- **On track with the goal** (e.g. losing weight when the goal is to lose) → encourage.
+- **Everyday noise** (1–2 days of minor movement within the normal band) → acknowledge normally, don't probe.
+- **Likely a real deviation** (several consecutive days in the wrong direction, or a clear rebound off a low that exceeds the normal swing) → reassure, then gently offer to look into the cause. If the user says yes → read `weight-gain-strategy/references/cause-check-flow.md`.
+- **Plateau** (little to no change over 14 days, drifting within a narrow band) → gently ask whether they'd like to look into why. If they say yes → likewise go to `cause-check-flow.md`.
+- `active_strategy.active: true` → don't intervene again.
+- `last_intervention_date` within the past 7 days → don't intervene again (recorded after both plateau and deviation prompts).
+- **Only raise it when you're at least 80% confident the deviation is real. An unnecessary question is also an intrusion.**
