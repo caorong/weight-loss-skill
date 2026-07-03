@@ -150,16 +150,16 @@ Ask which diet mode the user would like to follow. Instead of listing all availa
 - Experience level (beginners → Balanced / Flexible; experienced → more specialized)
 - Cultural context and food availability
 
-Available modes: Balanced / Flexible, Healthy U.S.-Style (USDA), High-Protein, Low-Carb, Keto, Mediterranean, Plant-Based, Intermittent Fasting (16:8), Intermittent Fasting (5:2). See `weight-loss-planner/references/diet-modes.md` for the full specification of each mode.
+Available modes: Balanced / Flexible, Healthy U.S.-Style (USDA), High-Protein, Low-Carb, Keto, Mediterranean, Plant-Based, Intermittent Fasting (16:8), Intermittent Fasting (5:2).
 
 | Mode | Fat Range | Best For | Key Constraint |
 |---|---|---|---|
 | **Healthy U.S.-Style (USDA)** | 20–35% | Following the Dietary Guidelines; general health | Added sugars <10%, sat fat <10%, sodium <2,300mg |
-| **Balanced / Flexible** | 25–35% | Most people; easiest to sustain | None — just hit your calories and macros |
-| **High-Protein** | 25–35% | Gym-goers preserving muscle during deficit | Requires consistent protein sources |
+| **Balanced / Flexible** | 20–35% | Most people; easiest to sustain | None — just hit your calories and macros |
+| **High-Protein** | 20–35% | Gym-goers preserving muscle during deficit | Requires consistent protein sources |
 | **Low-Carb** | 40–50% | People who feel better with fewer carbs | Carbs under ~100g/day |
 | **Keto** | 65–75% | Aggressive carb restriction fans | Carbs under 20–30g/day; adaptation period |
-| **Mediterranean** | 25–35% | Heart health focus; enjoys olive oil and fish | Emphasizes whole foods, limits processed |
+| **Mediterranean** | 20–35% | Heart health focus; enjoys olive oil and fish | Emphasizes whole foods, limits processed |
 | **IF (16:8)** | Any | People who prefer fewer, larger meals | All food within 8-hour window |
 | **IF (5:2)** | Any | People who prefer 2 very-low days | 500–600 kcal on 2 non-consecutive days |
 | **Plant-Based** | 20–30% | Vegetarian or vegan users | No animal products (vegan) or limited (vegetarian) |
@@ -229,7 +229,7 @@ Then proceed to Step 2 to calculate macros using the confirmed diet mode.
 
 The user's diet mode should already be confirmed in Step 1.5 (or from a prior session stored in `health-profile.md` / conversation context). If somehow not yet resolved, ask the user before proceeding. Default to Balanced if they're unsure.
 
-For the full list of supported diet modes, fat ranges, and detailed food guidance, see `weight-loss-planner/references/diet-modes.md`. The key point for meal planning: each mode defines a **fat percentage range** that determines the macro split. Protein is always from body weight, carbs fill the remainder.
+Each mode defines a **fat percentage range** that determines the macro split. Protein is always from body weight (g/kg), carbs fill the remainder.
 
 ### Macro Calculation
 
@@ -246,7 +246,7 @@ The script returns protein/fat/carb ranges with min/target/max values and per-me
 
 Present this clearly:
 
-> Based on 1,850 kcal/day, 75 kg, Balanced mode (fat range 25–35%):
+> Based on 1,850 kcal/day, 75 kg, Balanced mode (fat range 20–35%):
 >
 > | Macro | Target | Grams | Per Meal (~3 meals) | Adjustable Range |
 > |---|---|---|---|---|

@@ -187,17 +187,6 @@ DIET_MODE_FAT = {
     "if_5_2":        (20, 35),
 }
 
-DIET_MODE_MACROS = {
-    "usda":          {"protein": (10, 35), "carbs": (45, 65), "fat": (20, 35)},
-    "balanced":      {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
-    "high_protein":  {"protein": (35, 45), "carbs": (25, 35), "fat": (20, 35)},
-    "low_carb":      {"protein": (30, 40), "carbs": (15, 25), "fat": (40, 50)},
-    "keto":          {"protein": (20, 25), "carbs": (5, 10),  "fat": (65, 75)},
-    "mediterranean": {"protein": (20, 30), "carbs": (40, 50), "fat": (20, 35)},
-    "plant_based":   {"protein": (20, 30), "carbs": (45, 55), "fat": (20, 30)},
-    "if_16_8":       {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
-    "if_5_2":        {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
-}
 
 # ---------------------------------------------------------------------------
 # Produce tracking constants (China region)

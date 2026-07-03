@@ -3,24 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📊 周报</title>
+<title>周报</title>
 <link href="https://fonts.googleapis.com/css2?family=Irish+Grover&display=swap" rel="stylesheet">
+<link href="/fonts/notoserif/notoserif.css" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #faf9f5; color: #333; line-height: 1.5; font-size: 14px; -webkit-text-size-adjust: 100%; }
+body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'STSong', serif; background: #FAFAFA; color: #333; line-height: 1.5; font-size: 14px; -webkit-text-size-adjust: 100%; font-feature-settings: "tnum"; }
 .page { max-width: 800px; margin: 0 auto; padding: 0 1.5rem 2rem; }
-.report-header { text-align: center; margin-top: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e0ddd5; }
-.report-header h1 { font-size: 1.4rem; font-weight: 700; color: #2d5016; margin-bottom: 0.3rem; }
+.report-header { text-align: center; margin-top: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #F3F4F6; }
+.report-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.3rem; }
 .report-header .subtitle { font-size: 0.85rem; color: #666; }
 .report-header .date-range { font-size: 0.75rem; color: #aaa; margin-top: 0.2rem; }
-.report-card { background: #fff; border: 1px solid #e0ddd5; border-radius: 12px; margin-bottom: 1.5rem; overflow: hidden; }
-.card-header { padding: 0.6rem 1rem; font-size: 0.95rem; font-weight: 600; color: #2d5016; border-bottom: 1px solid #f0ede5; }
-.card-body { padding: 0.8rem 21px; }
-.card-commentary { font-size: 0.85rem; color: #666; padding: 0.6rem 21px 0.8rem; border-top: 1px solid #f0ede5; line-height: 1.6; }
-.logging-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 0.2rem; }
+.report-card { background: #fff; border: none; border-radius: 16px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.card-header { padding: 16px 20px 0; font-family: "Poppins", system-ui, "PingFang SC", -apple-system, sans-serif; font-size: 14px; font-weight: 500; color: #6B7280; border-bottom: none; }
+.card-body { padding: 16px 20px; }
+.card-commentary { font-size: 0.85rem; color: #666; padding: 0.6rem 21px 0.8rem; border-top: 1px solid #F3F4F6; line-height: 1.6; }
+.logging-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 0.3rem; }
 .logging-grid .day-label { font-size: 0.78rem; color: #888; font-weight: 500; padding: 0.3rem 0; }
-.logging-grid .day-status { font-size: 1.2rem; padding: 0.2rem 0 0.3rem; }
+.logging-grid .day-cells { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 0.2rem 0 0.3rem; }
+.logging-grid .meal-cell { width: 18px; height: 8px; border-radius: 3px; background: #F3F4F6; }
+.logging-grid .meal-cell.hit { background: #FADCE4; }
 .logging-summary { text-align: center; font-size: 0.85rem; font-weight: 600; color: #333; padding-top: 0.5rem; }
+.meal-tally { display: flex; justify-content: center; gap: 20px; padding-top: 14px; margin-top: 10px; border-top: 1px solid #F3F4F6; }
+.meal-tally .tally-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.meal-tally .tally-dot { width: 20px; height: 6px; border-radius: 3px; background: #FADCE4; }
+.meal-tally .tally-num { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; letter-spacing: 0.5px; }
+.meal-tally .tally-num .denom { color: #9CA3AF; font-weight: 500; font-size: 0.78rem; margin-left: 1px; }
+.meal-tally .tally-label { font-size: 0.7rem; color: #9CA3AF; font-weight: 500; letter-spacing: 0.5px; }
 .cal-chart { position: relative; height: 220px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 0 0 2rem; margin-bottom: 0.4rem; }
 .cal-target-band { position: absolute; left: 2rem; right: 0; background: rgba(0,0,0,0.05); z-index: 0; }
 .cal-target-label { position: absolute; right: 4px; top: 2px; font-size: 0.65rem; color: #aaa; }
@@ -52,17 +61,17 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
 .weight-change.up { color: #e57373; }
 .weight-change.down { color: #6bcb8b; }
 .weight-progress { text-align: center; font-size: 0.78rem; color: #888; padding-top: 0.2rem; }
-.section-subtitle { font-size: 0.85rem; font-weight: 600; color: #2d5016; margin-bottom: 0.3rem; padding-top: 0.3rem; }
+.section-subtitle { font-size: 0.85rem; font-weight: 600; color: #D73C63; margin-bottom: 0.3rem; padding-top: 0.3rem; }
 .section-subtitle:first-child { padding-top: 0; }
-.suggestions-divider { border: none; border-top: 1px solid #f0ede5; margin: 0.6rem 0; }
+.suggestions-divider { border: none; border-top: 1px solid #F3F4F6; margin: 0.6rem 0; }
 .achievement-list, .suggestion-list { padding-left: 1.2rem; font-size: 0.82rem; color: #444; }
 .achievement-list li, .suggestion-list li { margin-bottom: 0.3rem; }
-.week-nav { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; background: #faf9f5; padding: 0.6rem 1rem; margin: 0 -1.5rem; border-bottom: 1px solid #e0ddd5; }
-.week-nav-btn { display: inline-block; padding: 0.35rem 0.7rem; background: #2d5016; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; transition: background 0.2s; cursor: pointer; }
-.week-nav-btn:hover { background: #3d6b1f; }
+.week-nav { display: flex; justify-content: space-between; align-items: center; background: transparent; padding: 1rem 0 5rem; margin-top: 1rem; }
+.week-nav-btn { display: inline-block; padding: 0.35rem 0.7rem; background: #D73C63; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; transition: background 0.2s; cursor: pointer; }
+.week-nav-btn:hover { background: #bf2e54; }
 .week-nav-btn.disabled { background: #ccc; color: #999; pointer-events: none; cursor: default; }
 .week-nav-current { font-size: 0.78rem; color: #666; font-weight: 500; }
-.report-footer { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid #e0ddd5; }
+.report-footer { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid #F3F4F6; }
 .report-footer img { width: 32px; height: 32px; border-radius: 6px; }
 .report-footer .brand-name { font-family: 'Irish Grover', cursive; font-size: 1.1rem; color: #D73C63; margin: 0; }
 .report-disclaimer { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 0.5rem; }
@@ -84,7 +93,7 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
   // ─── i18n ───────────────────────────────────────────────────────────
   var I18N = {
     zh: {
-      title: '📊 第{N}周周报',
+      title: '第{N}周周报',
       loading: '加载中...',
       noData: '本周没有记录数据',
       noDataHint: '开始记录后，这里会出现详细的分析报告',
@@ -93,25 +102,28 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
       prevWeek: '← 上一周',
       nextWeek: '下一周 →',
       weekLabel: '第{N}周',
-      loggingHeader: '📅 记录日历',
+      loggingHeader: '打卡记录',
       loggingDays: '记录 {x}/{y} 天',
-      calorieHeader: '🔥 热量分析',
+      mealBreakfast: '早餐',
+      mealLunch: '午餐',
+      mealDinner: '晚餐',
+      calorieHeader: '热量分析',
       avgCal: '日均约 {avg} kcal',
       avgCalSimple: '日均 {avg} kcal',
       avgCalTarget: '目标 {min}–{max}',
       missingMeals: '{n}天有漏记',
-      weightHeader: '⚖️ 体重记录',
+      weightHeader: '体重记录',
       noWeight: '暂无体重数据',
       thisWeekChange: '本周 {sign}{change} kg（{from}→{to}）',
       thisWeekSingle: '本周称重 1 次 · {val} kg',
-      macroHeader: '🥗 营养素分析',
+      macroHeader: '营养素分析',
       macroEstNote: '* 部分天数记录不全，缺失餐次按本周同类餐平均值估算',
       carbs: '碳水',
       protein: '蛋白质',
       fat: '脂肪',
       targetLabel: '目标 {min}–{max}',
       avgIntake: '平均摄入 {val}',
-      highlightsHeader: '✨ 本周亮点 & 建议',
+      highlightsHeader: '本周亮点 & 建议',
       highlights: '亮点',
       suggestions: '下周建议',
       defaultHighlight: '坚持记录就是最大的亮点 💪',
@@ -122,7 +134,7 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
       weekdays: ['周一','周二','周三','周四','周五','周六','周日']
     },
     en: {
-      title: '📊 Week {N} Report',
+      title: 'Week {N} Report',
       loading: 'Loading...',
       noData: 'No data recorded this week',
       noDataHint: 'Start logging and your analysis will appear here',
@@ -131,25 +143,28 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
       prevWeek: '← Previous',
       nextWeek: 'Next →',
       weekLabel: 'Week {N}',
-      loggingHeader: '📅 Logging Calendar',
+      loggingHeader: 'Meal Log',
       loggingDays: 'Logged {x}/{y} days',
-      calorieHeader: '🔥 Calorie Analysis',
+      mealBreakfast: 'Breakfast',
+      mealLunch: 'Lunch',
+      mealDinner: 'Dinner',
+      calorieHeader: 'Calorie Analysis',
       avgCal: 'Daily avg ~{avg} kcal',
       avgCalSimple: 'Daily avg {avg} kcal',
       avgCalTarget: 'Target {min}–{max}',
       missingMeals: '{n} days incomplete',
-      weightHeader: '⚖️ Weight Progress',
+      weightHeader: 'Weight Progress',
       noWeight: 'No weight data yet',
       thisWeekChange: 'This week {sign}{change} kg ({from}→{to})',
       thisWeekSingle: '1 weigh-in · {val} kg',
-      macroHeader: '🥗 Macronutrients',
+      macroHeader: 'Macronutrients',
       macroEstNote: '* Some days incomplete; missing meals estimated from weekly averages',
       carbs: 'Carbs',
       protein: 'Protein',
       fat: 'Fat',
       targetLabel: 'Target {min}–{max}',
       avgIntake: 'Avg {val}',
-      highlightsHeader: '✨ Highlights & Suggestions',
+      highlightsHeader: 'Highlights & Suggestions',
       highlights: 'Highlights',
       suggestions: 'Next Week',
       defaultHighlight: 'Showing up and logging is the biggest win 💪',
@@ -325,9 +340,9 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
     var svg = '<svg width="' + svgWidth + '" height="175" viewBox="0 0 ' + svgWidth + ' 175" style="display:block;min-width:' + svgWidth + 'px;">\n';
     for (var gi = 0; gi < yTicks.length; gi++) {
       var gy = valToY(yTicks[gi]);
-      svg += '<line x1="0" y1="' + gy + '" x2="' + svgWidth + '" y2="' + gy + '" stroke="#f0ede5" stroke-width="1" stroke-dasharray="4"/>\n';
+      svg += '<line x1="0" y1="' + gy + '" x2="' + svgWidth + '" y2="' + gy + '" stroke="#F3F4F6" stroke-width="1" stroke-dasharray="4"/>\n';
     }
-    svg += '<line x1="0" y1="' + chartBottom + '" x2="' + svgWidth + '" y2="' + chartBottom + '" stroke="#f0ede5" stroke-width="1"/>\n';
+    svg += '<line x1="0" y1="' + chartBottom + '" x2="' + svgWidth + '" y2="' + chartBottom + '" stroke="#F3F4F6" stroke-width="1"/>\n';
     svg += '<defs><linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6bcb8b" stop-opacity="0.3"/><stop offset="100%" stop-color="#6bcb8b" stop-opacity="0.02"/></linearGradient></defs>\n';
 
     // Plan path
@@ -351,8 +366,8 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
       var isThisWeek = thisWeekDates[points[di].date];
       if (isThisWeek) {
         svg += '<circle cx="' + x + '" cy="' + y + '" r="6" fill="#6bcb8b" stroke="#fff" stroke-width="2.5"/>\n';
-        svg += '<text x="' + x + '" y="167" text-anchor="middle" font-size="10" fill="#2d5016" font-weight="600">' + label + '</text>\n';
-        svg += '<text x="' + x + '" y="' + (y - 8) + '" text-anchor="middle" font-size="11.5" fill="#2d5016" font-weight="700">' + points[di].value + '</text>\n';
+        svg += '<text x="' + x + '" y="167" text-anchor="middle" font-size="10" fill="#1a1a1a" font-weight="600">' + label + '</text>\n';
+        svg += '<text x="' + x + '" y="' + (y - 8) + '" text-anchor="middle" font-size="11.5" fill="#1a1a1a" font-weight="700">' + points[di].value + '</text>\n';
       } else {
         svg += '<circle cx="' + x + '" cy="' + y + '" r="4.5" fill="#fff" stroke="#a8deb8" stroke-width="2"/>\n';
         svg += '<text x="' + x + '" y="167" text-anchor="middle" font-size="9.5" fill="#aaa">' + label + '</text>\n';
@@ -469,13 +484,6 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
 
     var h = '';
 
-    // Nav
-    h += '<nav class="week-nav">';
-    h += '<a class="week-nav-btn week-nav-prev' + prevDisabled + '" data-week="' + prevStart + '">' + t('prevWeek') + '</a>';
-    h += '<span class="week-nav-current">' + t('weekLabel', {N: weekNum}) + '</span>';
-    h += '<a class="week-nav-btn week-nav-next' + nextDisabled + '" data-week="' + nextStart + '">' + t('nextWeek') + '</a>';
-    h += '</nav>';
-
     // Header
     h += '<header class="report-header">';
     h += '<h1>' + t('title', {N: weekNum}) + '</h1>';
@@ -496,6 +504,12 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
       h += '<div style="font-size:0.82rem;color:#aaa;margin-top:0.3rem;">' + t('noDataHint') + '</div>';
       h += '</div></div>';
       h += '<div class="report-footer"><img src="https://nanorhino.ai/assets/logo.png" alt="NanoRhino"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
+      // Nav 挪到最后
+      h += '<nav class="week-nav">';
+      h += '<a class="week-nav-btn week-nav-prev' + prevDisabled + '" data-week="' + prevStart + '">' + t('prevWeek') + '</a>';
+      h += '<span class="week-nav-current">' + t('weekLabel', {N: weekNum}) + '</span>';
+      h += '<a class="week-nav-btn week-nav-next' + nextDisabled + '" data-week="' + nextStart + '">' + t('nextWeek') + '</a>';
+      h += '</nav>';
 
       document.getElementById('content').innerHTML = h;
       document.getElementById('content').style.display = '';
@@ -518,12 +532,47 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
     var wdays = t('weekdays');
     for (var i = 0; i < days.length; i++) h += '<div class="day-label">' + (wdays[i] || days[i].weekday) + '</div>';
     h += '</div><div class="logging-grid">';
+    // 动态推断本周用户的餐次:整周 meals 里出现过的主餐类型(早/午/晚)
+    // 若某餐一次都没出现过 → 视为用户不固定吃这餐,不为它保留格子
+    var weekMealTypes = {};
+    for (var wm = 0; wm < days.length; wm++) {
+      var ms = days[wm].meals || [];
+      for (var mn = 0; mn < ms.length; mn++) weekMealTypes[ms[mn].meal_type] = true;
+    }
+    var typesOrder = ['breakfast', 'lunch', 'dinner'];
+    var activeTypes = typesOrder.filter(function(t) { return weekMealTypes[t]; });
+    // 兜底:整周啥都没记(空周),仍显示 3 格灰
+    if (activeTypes.length === 0) activeTypes = typesOrder;
     for (var j = 0; j < days.length; j++) {
-      var emoji = (days[j].logged && days[j].totals.cal > 0) ? '✅' : '—';
-      h += '<div class="day-status">' + emoji + '</div>';
+      var meals = (days[j].meals || []).map(function(m) { return m.meal_type; });
+      var cells = '';
+      for (var k = 0; k < activeTypes.length; k++) {
+        var hit = days[j].logged && meals.indexOf(activeTypes[k]) !== -1;
+        cells += '<div class="meal-cell' + (hit ? ' hit' : '') + '"></div>';
+      }
+      h += '<div class="day-cells">' + cells + '</div>';
     }
     h += '</div>';
     h += '<div class="logging-summary">' + t('loggingDays', {x: summary.logged_days, y: summary.total_days}) + '</div>';
+    // 各餐命中次数汇总(只显示本周出现过的餐次,分母=总天数)
+    var tallyMap = { breakfast: 0, lunch: 0, dinner: 0 };
+    for (var td = 0; td < days.length; td++) {
+      var dMeals = (days[td].meals || []).map(function(m) { return m.meal_type; });
+      if (dMeals.indexOf('breakfast') !== -1) tallyMap.breakfast++;
+      if (dMeals.indexOf('lunch') !== -1) tallyMap.lunch++;
+      if (dMeals.indexOf('dinner') !== -1) tallyMap.dinner++;
+    }
+    var labelMap = { breakfast: t('mealBreakfast'), lunch: t('mealLunch'), dinner: t('mealDinner') };
+    var tallyHtml = '';
+    for (var ti = 0; ti < activeTypes.length; ti++) {
+      var mt = activeTypes[ti];
+      tallyHtml += '<div class="tally-item">' +
+        '<span class="tally-dot"></span>' +
+        '<span class="tally-num">' + tallyMap[mt] + '<span class="denom">/' + days.length + '</span></span>' +
+        '<span class="tally-label">' + labelMap[mt] + '</span>' +
+      '</div>';
+    }
+    h += '<div class="meal-tally">' + tallyHtml + '</div>';
     h += '</div>';
     if (commentary.logging) h += '<div class="card-commentary">' + esc(commentary.logging) + '</div>';
     h += '</div>';
@@ -604,6 +653,12 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
 
     // Footer
     h += '<div class="report-footer"><img src="https://nanorhino.ai/assets/logo.png" alt="NanoRhino"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
+    // Nav 挪到最后
+    h += '<nav class="week-nav">';
+    h += '<a class="week-nav-btn week-nav-prev' + prevDisabled + '" data-week="' + prevStart + '">' + t('prevWeek') + '</a>';
+    h += '<span class="week-nav-current">' + t('weekLabel', {N: weekNum}) + '</span>';
+    h += '<a class="week-nav-btn week-nav-next' + nextDisabled + '" data-week="' + nextStart + '">' + t('nextWeek') + '</a>';
+    h += '</nav>';
 
     document.getElementById('content').innerHTML = h;
     document.getElementById('content').style.display = '';
@@ -671,5 +726,13 @@ body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background
   });
 })();
 </script>
+<!-- 返回数据中心按钮:预览页展示用;/api/weekly 路径下的 injectBackButton 会覆盖 href 带上真实 token -->
+<div style="height:84px"></div>
+<div id="back-to-dashboard" onclick="location.href='/'"
+     style="position:fixed;left:50%;transform:translateX(-50%);bottom:20px;
+            background:rgba(215,60,99,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+            color:#fff;padding:11px 26px;border-radius:24px;font-size:15px;font-weight:600;
+            box-shadow:0 3px 12px rgba(215,60,99,0.28);z-index:9999;cursor:pointer;
+            -webkit-tap-highlight-color:transparent">← 返回数据中心</div>
 </body>
 </html>

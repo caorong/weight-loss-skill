@@ -341,12 +341,12 @@ python3 {onboarding:baseDir}/scripts/onboarding-finalize.py \
 
 | 模式 | 脂肪占比 | 适合人群 |
 |---|---|---|
-| Balanced / Flexible | 25–35% | 大多数人；最易坚持 |
+| Balanced / Flexible | 20–35% | 大多数人；最易坚持 |
 | Healthy U.S.-Style (USDA) | 20–35% | 普通健康向；符合 Dietary Guidelines |
-| High-Protein | 25–35% | 健身者减脂期保留肌肉 |
+| High-Protein | 20–35% | 健身者减脂期保留肌肉 |
 | Low-Carb | 40–50% | 少碳水状态更好的人（<100g 碳水/天） |
 | Keto | 65–75% | 激进的碳水限制（<20–30g 碳水/天） |
-| Mediterranean | 25–35% | 心血管健康取向；全食物、橄榄油、鱼 |
+| Mediterranean | 20–35% | 心血管健康取向；全食物、橄榄油、鱼 |
 | IF (16:8) | 任意 | 喜欢在 8 小时窗口内吃较少但较大的餐 |
 | IF (5:2) | 任意 | 每周 2 天极低（500–600 大卡），其余天正常 |
 | Plant-Based | 20–30% | 素食或纯素用户 |

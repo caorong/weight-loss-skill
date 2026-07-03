@@ -92,7 +92,7 @@ Show daily macro intake as three separate vertical bar charts (碳水/蛋白质/
 
 **Target range source:**
 1. Primary: `PLAN.md` macro ranges
-2. Fallback: protein=weight×1.2g/kg, fat=25-35% cal, carb=remainder
+2. Fallback: protein=weight×1.2g/kg, fat=20-35% cal, carb=remainder
 
 **Commentary rules:**
 - All in range → `"三大营养素都在范围内，继续保持！"`

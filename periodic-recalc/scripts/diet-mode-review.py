@@ -11,7 +11,7 @@ with their current diet_mode's expected macro ranges. Recommends a mode change
 if their actual pattern consistently falls outside the current mode's ranges.
 
 Usage:
-  python3 diet-mode-review.py --workspace /path/to/workspace --days 28
+  python3 diet-mode-review.py --workspace /path/to/workspace --target-weight 55 --days 28
 """
 
 import argparse
@@ -26,53 +26,57 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'shared'))
 from locale_helpers import is_china_user
 
 
-# Diet mode macro ranges (protein% / carbs% / fat%)
+# Diet mode macro ranges (carbs% / fat% only — protein uses g/kg)
 DIET_MODE_RANGES = {
     'usda': {
-        'protein': (10, 35),
         'carbs': (45, 65),
         'fat': (20, 35),
     },
     'balanced': {
-        'protein': (25, 35),
         'carbs': (35, 45),
         'fat': (20, 35),
     },
     'high_protein': {
-        'protein': (35, 45),
         'carbs': (25, 35),
         'fat': (20, 35),
     },
     'low_carb': {
-        'protein': (30, 40),
         'carbs': (15, 25),
         'fat': (40, 50),
     },
     'keto': {
-        'protein': (20, 25),
         'carbs': (5, 10),
         'fat': (65, 75),
     },
     'mediterranean': {
-        'protein': (20, 30),
         'carbs': (40, 50),
         'fat': (20, 35),
     },
     'plant_based': {
-        'protein': (20, 30),
         'carbs': (45, 55),
         'fat': (20, 30),
     },
     'if_16_8': {  # defaults to balanced
-        'protein': (25, 35),
         'carbs': (35, 45),
         'fat': (20, 35),
     },
     'if_5_2': {  # defaults to balanced
-        'protein': (25, 35),
         'carbs': (35, 45),
         'fat': (20, 35),
     },
+}
+
+# Protein range per mode (g per kg target body weight) — matches nutrition-calc.py
+PROTEIN_RANGE = {
+    "high_protein": (1.4, 1.8),
+    "balanced": (1.2, 1.6),
+    "plant_based": (1.2, 1.6),
+    "usda": (1.2, 1.6),
+    "mediterranean": (1.2, 1.6),
+    "low_carb": (1.2, 1.6),
+    "keto": (1.2, 1.6),
+    "if_16_8": (1.2, 1.6),
+    "if_5_2": (1.2, 1.6),
 }
 
 
@@ -147,8 +151,8 @@ def collect_meal_data(workspace: Path, days: int) -> list[dict]:
 
 def calculate_macro_percentages(meal_data: list[dict]) -> dict | None:
     """
-    Calculate average macro percentages across all days.
-    Returns {protein_pct, carbs_pct, fat_pct} or None if insufficient data.
+    Calculate average macro percentages and absolute protein grams across all days.
+    Returns {protein_pct, carbs_pct, fat_pct, protein_g} or None if insufficient data.
     """
     if len(meal_data) < 7:
         return None
@@ -157,6 +161,7 @@ def calculate_macro_percentages(meal_data: list[dict]) -> dict | None:
     total_carbs_cal = 0
     total_fat_cal = 0
     total_calories = 0
+    total_protein_g = 0
 
     for day in meal_data:
         protein_cal = day['protein_g'] * 4
@@ -167,6 +172,7 @@ def calculate_macro_percentages(meal_data: list[dict]) -> dict | None:
         total_carbs_cal += carbs_cal
         total_fat_cal += fat_cal
         total_calories += day['calories']
+        total_protein_g += day['protein_g']
 
     if total_calories == 0:
         return None
@@ -175,6 +181,7 @@ def calculate_macro_percentages(meal_data: list[dict]) -> dict | None:
         'protein_pct': round((total_protein_cal / total_calories) * 100, 1),
         'carbs_pct': round((total_carbs_cal / total_calories) * 100, 1),
         'fat_pct': round((total_fat_cal / total_calories) * 100, 1),
+        'protein_g': round(total_protein_g / len(meal_data), 1),
     }
 
 
@@ -183,7 +190,7 @@ def is_within_range(value: float, range_tuple: tuple[float, float]) -> bool:
     return range_tuple[0] <= value <= range_tuple[1]
 
 
-def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: Path) -> tuple[str, str] | None:
+def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: Path, target_weight: float) -> tuple[str, str] | None:
     """
     Find the diet mode that best matches the actual macro percentages.
     Returns (mode_name, reason) or None if current mode is still the best fit.
@@ -192,12 +199,20 @@ def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: P
     if not current_ranges:
         return None
 
-    # Check if actual macros fit current mode
-    fits_current = (
-        is_within_range(actual_macros['protein_pct'], current_ranges['protein']) and
+    # Check if actual macros fit current mode (carbs + fat by %, protein by g/kg)
+    fits_carbs_fat = (
         is_within_range(actual_macros['carbs_pct'], current_ranges['carbs']) and
         is_within_range(actual_macros['fat_pct'], current_ranges['fat'])
     )
+
+    # Protein check via absolute gram range
+    p_lo, p_hi = PROTEIN_RANGE.get(current_mode, (1.2, 1.6))
+    target_lo = target_weight * p_lo
+    target_hi = target_weight * p_hi
+    actual_protein_g = actual_macros.get('protein_g', 0)
+    protein_fits = target_lo <= actual_protein_g <= target_hi
+
+    fits_current = fits_carbs_fat and protein_fits
 
     if fits_current:
         return None  # Current mode is fine
@@ -216,13 +231,22 @@ def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: P
         if is_china and mode_name in ('mediterranean', 'usda'):
             continue
 
-        # Calculate "distance" from actual to mode's midpoints
-        p_mid = (ranges['protein'][0] + ranges['protein'][1]) / 2
         c_mid = (ranges['carbs'][0] + ranges['carbs'][1]) / 2
         f_mid = (ranges['fat'][0] + ranges['fat'][1]) / 2
 
+        # Protein distance via gram range
+        p_lo, p_hi = PROTEIN_RANGE.get(mode_name, (1.2, 1.6))
+        mode_target_lo = target_weight * p_lo
+        mode_target_hi = target_weight * p_hi
+        if actual_protein_g < mode_target_lo:
+            protein_distance = (mode_target_lo - actual_protein_g) / mode_target_lo
+        elif actual_protein_g > mode_target_hi:
+            protein_distance = (actual_protein_g - mode_target_hi) / mode_target_hi
+        else:
+            protein_distance = 0
+
         distance = (
-            abs(actual_macros['protein_pct'] - p_mid) +
+            protein_distance * 100 +
             abs(actual_macros['carbs_pct'] - c_mid) +
             abs(actual_macros['fat_pct'] - f_mid)
         )
@@ -235,28 +259,25 @@ def find_best_matching_mode(actual_macros: dict, current_mode: str, workspace: P
         return None
 
     # Generate reason
-    actual = actual_macros
-    current = current_ranges
-    suggested = DIET_MODE_RANGES[best_match]
-
     reasons = []
-    if not is_within_range(actual['protein_pct'], current['protein']):
-        if actual['protein_pct'] > current['protein'][1]:
-            reasons.append(f"protein ({actual['protein_pct']:.0f}%) exceeds {current_mode} range ({current['protein'][0]}-{current['protein'][1]}%)")
-        else:
-            reasons.append(f"protein ({actual['protein_pct']:.0f}%) below {current_mode} range ({current['protein'][0]}-{current['protein'][1]}%)")
 
-    if not is_within_range(actual['carbs_pct'], current['carbs']):
-        if actual['carbs_pct'] > current['carbs'][1]:
-            reasons.append(f"carbs ({actual['carbs_pct']:.0f}%) exceed {current_mode} range ({current['carbs'][0]}-{current['carbs'][1]}%)")
+    if not protein_fits:
+        if actual_protein_g > target_hi:
+            reasons.append(f"protein ({actual_protein_g:.0f}g/day) exceeds {current_mode} range ({target_lo:.0f}-{target_hi:.0f}g/day)")
         else:
-            reasons.append(f"carbs ({actual['carbs_pct']:.0f}%) below {current_mode} range ({current['carbs'][0]}-{current['carbs'][1]}%)")
+            reasons.append(f"protein ({actual_protein_g:.0f}g/day) below {current_mode} range ({target_lo:.0f}-{target_hi:.0f}g/day)")
 
-    if not is_within_range(actual['fat_pct'], current['fat']):
-        if actual['fat_pct'] > current['fat'][1]:
-            reasons.append(f"fat ({actual['fat_pct']:.0f}%) exceeds {current_mode} range ({current['fat'][0]}-{current['fat'][1]}%)")
+    if not is_within_range(actual_macros['carbs_pct'], current_ranges['carbs']):
+        if actual_macros['carbs_pct'] > current_ranges['carbs'][1]:
+            reasons.append(f"carbs ({actual_macros['carbs_pct']:.0f}%) exceed {current_mode} range ({current_ranges['carbs'][0]}-{current_ranges['carbs'][1]}%)")
         else:
-            reasons.append(f"fat ({actual['fat_pct']:.0f}%) below {current_mode} range ({current['fat'][0]}-{current['fat'][1]}%)")
+            reasons.append(f"carbs ({actual_macros['carbs_pct']:.0f}%) below {current_mode} range ({current_ranges['carbs'][0]}-{current_ranges['carbs'][1]}%)")
+
+    if not is_within_range(actual_macros['fat_pct'], current_ranges['fat']):
+        if actual_macros['fat_pct'] > current_ranges['fat'][1]:
+            reasons.append(f"fat ({actual_macros['fat_pct']:.0f}%) exceeds {current_mode} range ({current_ranges['fat'][0]}-{current_ranges['fat'][1]}%)")
+        else:
+            reasons.append(f"fat ({actual_macros['fat_pct']:.0f}%) below {current_mode} range ({current_ranges['fat'][0]}-{current_ranges['fat'][1]}%)")
 
     reason = "Your actual " + ", ".join(reasons) + f". This matches {best_match} mode better."
 
@@ -267,6 +288,8 @@ def main():
     parser = argparse.ArgumentParser(description='Review diet mode against actual eating patterns')
     parser.add_argument('--workspace', type=Path, required=True,
                         help='Path to user workspace directory')
+    parser.add_argument('--target-weight', type=float, required=True,
+                        help='Target weight in kg for protein calculation')
     parser.add_argument('--days', type=int, default=28,
                         help='Number of days to analyze (default: 28)')
     args = parser.parse_args()
@@ -299,7 +322,7 @@ def main():
         return
 
     # Find best matching mode
-    match_result = find_best_matching_mode(actual_macros, current_mode, workspace)
+    match_result = find_best_matching_mode(actual_macros, current_mode, workspace, args.target_weight)
 
     if match_result is None:
         # Current mode is fine

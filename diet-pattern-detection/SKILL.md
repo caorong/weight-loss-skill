@@ -24,7 +24,9 @@ Daily cron job. Start date: `Onboarding Completed` + 3 days (from `health-profil
    ```bash
    python3 {baseDir}/scripts/detect-pattern.py \
      --data-dir {workspaceDir}/data/meals \
-     --current-mode <from health-profile.md > Diet Config > Diet Mode>
+     --current-mode <from health-profile.md > Diet Config > Diet Mode> \
+     --weight <current weight from latest weight.json entry> \
+     --target-weight <target weight from PLAN.md>
    ```
    If result has `reason: "insufficient_data"` (< 3 days) → reply exactly `NO_REPLY` (suppresses delivery; do NOT emit a free-text explanation). Cron preserved, retry tomorrow.
 

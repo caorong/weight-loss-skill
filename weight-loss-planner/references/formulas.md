@@ -348,7 +348,7 @@ Carbohydrate (derived — fills remaining calories):
 
 **Key principle:** The ranges are the real targets. The display values (midpoints) are shown for convenience when a single number is needed (e.g., in the summary table). In coaching and suggestions, always reference the range to give the user flexibility.
 
-### Example (weight = 70 kg, totalCal = 1,800 kcal, Balanced mode — fat 25–35%)
+### Example (weight = 70 kg, totalCal = 1,800 kcal, Balanced mode — fat 20–35%)
 
 | Macro | Range | Display (midpoint) | Calories |
 |---|---|---|---|
@@ -363,7 +363,7 @@ Carbohydrate (derived — fills remaining calories):
 |---|---|---|---|---|
 | General / low activity | ×1.2–1.4 g/kg | 25–30% of kcal | remainder | Standard for moderate weight loss |
 | Strength training | ×1.4–1.6 g/kg | 25–30% of kcal | remainder | Higher protein supports muscle repair |
-| Older adults (50+) | ×1.4–1.6 g/kg | 25–35% of kcal | remainder | Higher protein counters sarcopenia |
+| Older adults (50+) | ×1.4–1.6 g/kg | 20–35% of kcal | remainder | Higher protein counters sarcopenia |
 | Low-carb preference | ×1.4–1.6 g/kg | 30–35% of kcal | remainder (lower) | User preference; ensure min ~100g carbs for brain function |
 
 ### Practical Notes

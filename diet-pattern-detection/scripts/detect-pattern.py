@@ -28,15 +28,28 @@ from locale_helpers import is_china_user
 # ---------------------------------------------------------------------------
 
 DIET_MODE_MACROS = {
-    "usda":          {"protein": (10, 35), "carbs": (45, 65), "fat": (20, 35)},
-    "balanced":      {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
-    "high_protein":  {"protein": (35, 45), "carbs": (25, 35), "fat": (20, 35)},
-    "low_carb":      {"protein": (30, 40), "carbs": (15, 25), "fat": (40, 50)},
-    "keto":          {"protein": (20, 25), "carbs": (5, 10),  "fat": (65, 75)},
-    "mediterranean": {"protein": (20, 30), "carbs": (40, 50), "fat": (20, 35)},
-    "plant_based":   {"protein": (20, 30), "carbs": (45, 55), "fat": (20, 30)},
-    "if_16_8":       {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
-    "if_5_2":        {"protein": (25, 35), "carbs": (35, 45), "fat": (20, 35)},
+    "usda":          {"carbs": (45, 65), "fat": (20, 35)},
+    "balanced":      {"carbs": (35, 45), "fat": (20, 35)},
+    "high_protein":  {"carbs": (25, 35), "fat": (20, 35)},
+    "low_carb":      {"carbs": (15, 25), "fat": (40, 50)},
+    "keto":          {"carbs": (5, 10),  "fat": (65, 75)},
+    "mediterranean": {"carbs": (40, 50), "fat": (20, 35)},
+    "plant_based":   {"carbs": (45, 55), "fat": (20, 30)},
+    "if_16_8":       {"carbs": (35, 45), "fat": (20, 35)},
+    "if_5_2":        {"carbs": (35, 45), "fat": (20, 35)},
+}
+
+# Protein range per mode (g per kg target body weight) — matches nutrition-calc.py
+PROTEIN_RANGE = {
+    "high_protein": (1.4, 1.8),
+    "balanced": (1.2, 1.6),
+    "plant_based": (1.2, 1.6),
+    "usda": (1.2, 1.6),
+    "mediterranean": (1.2, 1.6),
+    "low_carb": (1.2, 1.6),
+    "keto": (1.2, 1.6),
+    "if_16_8": (1.2, 1.6),
+    "if_5_2": (1.2, 1.6),
 }
 
 _SHORT_TO_LONG = {
@@ -103,18 +116,31 @@ def _calc_macro_pcts(meals: list):
         return None
     return {
         "calories": round(total_cal, 1),
+        "protein_g": round(total_p, 1),
         "protein_pct": round(total_p * 4 / total_cal * 100, 1),
         "carbs_pct": round(total_c * 4 / total_cal * 100, 1),
         "fat_pct": round(total_f * 9 / total_cal * 100, 1),
     }
 
 
-def _mode_distance(p_pct: float, c_pct: float, f_pct: float, mode: str) -> float:
+def _mode_distance(p_pct: float, c_pct: float, f_pct: float, mode: str,
+                    protein_g: float = None, target_weight: float = None) -> float:
     ranges = DIET_MODE_MACROS.get(mode)
     if not ranges:
         return float("inf")
     dist = 0.0
-    for actual, key in [(p_pct, "protein"), (c_pct, "carbs"), (f_pct, "fat")]:
+    # Protein: absolute gram range matching via target_weight × (lo, hi)
+    if protein_g is not None and target_weight is not None:
+        p_lo, p_hi = PROTEIN_RANGE.get(mode, (1.2, 1.6))
+        target_lo = target_weight * p_lo
+        target_hi = target_weight * p_hi
+        if protein_g < target_lo:
+            dist += (target_lo - protein_g) / target_lo * 100
+        elif protein_g > target_hi:
+            dist += (protein_g - target_hi) / target_hi * 100
+        # else: within range, distance contribution = 0
+    # Carbs & fat: percentage range matching
+    for actual, key in [(c_pct, "carbs"), (f_pct, "fat")]:
         lo, hi = ranges[key]
         if actual < lo:
             dist += lo - actual
@@ -227,6 +253,7 @@ def _get_pros_cons(current_mode: str, detected_mode: str) -> dict:
 
 
 def detect_diet_pattern(data_dir: str, current_mode: str,
+                        weight: float = None, target_weight: float = None,
                         ref_date: str = None, tz_offset: int = None) -> dict:
     end = date.fromisoformat(ref_date) if ref_date else date.fromisoformat(_local_date(tz_offset))
 
@@ -259,13 +286,15 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
     avg_p = round(sum(d["protein_pct"] for d in daily_splits) / 3, 1)
     avg_c = round(sum(d["carbs_pct"] for d in daily_splits) / 3, 1)
     avg_f = round(sum(d["fat_pct"] for d in daily_splits) / 3, 1)
-    avg_split = {"protein_pct": avg_p, "carbs_pct": avg_c, "fat_pct": avg_f}
+    avg_protein_g = round(sum(d["protein_g"] for d in daily_splits) / 3, 1)
+    avg_split = {"protein_pct": avg_p, "carbs_pct": avg_c, "fat_pct": avg_f, "protein_g": avg_protein_g}
 
     effective_current = current_mode
     if current_mode in ("if_16_8", "if_5_2"):
         effective_current = "balanced"
 
-    current_dist = _mode_distance(avg_p, avg_c, avg_f, effective_current)
+    current_dist = _mode_distance(avg_p, avg_c, avg_f, effective_current,
+                                  protein_g=avg_protein_g, target_weight=target_weight)
 
     # Build candidate modes list — exclude Mediterranean/USDA for China users
     candidate_modes = [
@@ -276,14 +305,17 @@ def detect_diet_pattern(data_dir: str, current_mode: str,
     best_mode = None
     best_dist = float("inf")
     for mode in candidate_modes:
-        dist = _mode_distance(avg_p, avg_c, avg_f, mode)
+        dist = _mode_distance(avg_p, avg_c, avg_f, mode,
+                              protein_g=avg_protein_g, target_weight=target_weight)
         if dist < best_dist:
             best_dist = dist
             best_mode = mode
 
     all_days_match = all(
-        _mode_distance(d["protein_pct"], d["carbs_pct"], d["fat_pct"], best_mode) <=
-        _mode_distance(d["protein_pct"], d["carbs_pct"], d["fat_pct"], effective_current)
+        _mode_distance(d["protein_pct"], d["carbs_pct"], d["fat_pct"], best_mode,
+                       protein_g=d["protein_g"], target_weight=target_weight) <=
+        _mode_distance(d["protein_pct"], d["carbs_pct"], d["fat_pct"], effective_current,
+                       protein_g=d["protein_g"], target_weight=target_weight)
         for d in daily_splits
     )
 
@@ -320,6 +352,8 @@ def main():
     parser = argparse.ArgumentParser(description="Detect diet pattern from meal logs")
     parser.add_argument("--data-dir", required=True, help="Path to meals data directory")
     parser.add_argument("--current-mode", required=True, help="Current diet mode from health-profile.md")
+    parser.add_argument("--weight", type=float, required=True, help="Current weight in kg")
+    parser.add_argument("--target-weight", type=float, required=True, help="Target weight in kg")
     parser.add_argument("--date", default=None, help="Reference date (YYYY-MM-DD), default today")
     parser.add_argument("--tz-offset", type=int, default=None, help="Timezone offset in seconds from UTC")
     args = parser.parse_args()
@@ -327,6 +361,8 @@ def main():
     result = detect_diet_pattern(
         data_dir=_normalize_path(args.data_dir),
         current_mode=args.current_mode,
+        weight=args.weight,
+        target_weight=args.target_weight,
         ref_date=args.date,
         tz_offset=args.tz_offset,
     )
