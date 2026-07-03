@@ -106,6 +106,33 @@ def catty_to_kg(value: float, original_unit: str) -> float:
     return value
 
 
+def extract_value_unit(entry):
+    """Read (value, unit) from a weight.json entry, tolerating off-schema shapes.
+
+    Canonical entry is {"value": N, "unit": "kg"}. But agents have occasionally
+    hand-written weight.json with alternate shapes — {"morning": 60.45},
+    {"evening": 61.0, "note": ...}, or a bare number. Read those without crashing
+    (returns kg by default) so load/history never breaks on legacy dirt. Returns
+    (None, None) if no numeric value can be found.
+    """
+    if isinstance(entry, (int, float)):
+        return float(entry), "kg"
+    if isinstance(entry, dict):
+        val = entry.get("value")
+        if val is None:
+            for alt in ("morning", "evening", "weight", "kg", "am", "pm"):
+                if isinstance(entry.get(alt), (int, float)):
+                    val = entry[alt]
+                    break
+        if val is None:
+            return None, None
+        try:
+            return float(val), entry.get("unit", "kg")
+        except (TypeError, ValueError):
+            return None, None
+    return None, None
+
+
 def now_with_offset(tz_offset_seconds: int) -> datetime:
     tz = timezone(timedelta(seconds=tz_offset_seconds))
     return datetime.now(tz)
@@ -164,15 +191,28 @@ def cmd_save(args):
         # Check if last entry is within correction window
         last_key = max(data.keys())
         last_dt = parse_iso(last_key)
+        # Legacy/off-schema keys may be date-only → naive datetime; align tzinfo to
+        # `now` so the subtraction doesn't raise (naive vs aware). A date-only key is
+        # never within the 30-min window anyway, so it just falls through to "created".
+        if last_dt.tzinfo is None:
+            last_dt = last_dt.replace(tzinfo=now.tzinfo)
         diff = (now - last_dt).total_seconds()
         if 0 <= diff <= CORRECTION_WINDOW_SECONDS:
             del data[last_key]
             action = "updated"
 
-    data[key] = {"value": value, "unit": unit}
+    entry = {"value": value, "unit": unit}
+    # Optional metadata (backward-compatible additive fields). Consumers that only
+    # read value/unit are unaffected; these let the agent record context that would
+    # otherwise tempt it to hand-write weight.json with an off-schema shape.
+    if getattr(args, "fasting", False):
+        entry["fasting"] = True
+    if getattr(args, "note", None):
+        entry["note"] = args.note
+    data[key] = entry
     save_data(args.data_dir, data)
 
-    result = {"action": action, "key": key, "value": value, "unit": unit}
+    result = {"action": action, "key": key, **entry}
     print(json.dumps(result, ensure_ascii=False))
 
 
@@ -201,8 +241,9 @@ def cmd_load(args):
     # Build output
     result = []
     for key, entry in entries:
-        val = entry["value"]
-        u = entry["unit"]
+        val, u = extract_value_unit(entry)
+        if val is None:
+            continue  # skip unreadable/off-schema entries rather than crash
         if display_unit:
             val = convert_weight(val, u, display_unit)
             u = display_unit
@@ -286,6 +327,8 @@ def main():
     p_save.add_argument("--unit", required=True)
     p_save.add_argument("--tz-offset", type=int, default=0, help="Timezone offset in seconds")
     p_save.add_argument("--correct", action="store_true", help="Force overwrite most recent entry")
+    p_save.add_argument("--fasting", action="store_true", help="Mark this reading as a fasting/morning weigh-in")
+    p_save.add_argument("--note", default=None, help="Optional free-text note for this entry")
 
     # load
     p_load = sub.add_parser("load")

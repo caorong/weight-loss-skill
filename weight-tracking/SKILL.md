@@ -11,24 +11,18 @@ metadata:
 # Weight Tracking
 
 > ⚠️ **SILENT OPERATION:** Never narrate internal actions, skill transitions, or tool calls to the user. Just do it silently and respond with the result.
-
-## Performance
-
-**Use TOOLS.md Quick Reference first.** If `tz_offset`, `unit_preference`, and `daily_cal_target` are already in the auto-injected TOOLS.md context, use those values directly — do NOT read `timezone.json` or `health-profile.md`.
-
-Only fall back to reading those files if Quick Reference is missing or outdated.
-
-Do NOT read this SKILL.md again if it's already in context from a prior turn.
+>
+> Do NOT re-read this SKILL.md if it's already in context from a prior turn.
 
 ## Data Storage
 
-**File:** `{workspaceDir}/data/weight.json` — JSON object keyed by ISO-8601 datetime with timezone offset. Each entry: `{ "value": 80, "unit": "kg" }`.
+**File:** `{workspaceDir}/data/weight.json` — a JSON object keyed by ISO-8601 datetime with timezone offset. Each entry: `{ "value": 80, "unit": "kg" }`, plus optional `"fasting": true` and `"note": "..."`. Only the save scripts write this file — never hand-edit it or write it with `python`/`exec`.
 
 ## Hard Rules — Weight Storage (MANDATORY)
 
 Non-negotiable. Agents have historically stashed weight in ad-hoc files (`weight-log.md`) or as a dated ledger inside `PLAN.md`, leaving `data/weight.json` incomplete and breaking badges and dashboards. Don't repeat that.
 
-1. **Always record, never just talk.** Any time the user mentions a weight figure or a change in weight — "72.5 this morning", "down 2 jin", "I weigh 79", "just weighed 80" — save it to `data/weight.json` via `save-and-check.py` (or `weight-tracker.py save`). A spoken reply alone never counts as recording.
+1. **Always record, never just talk.** Any time the user mentions a weight figure or a change in weight — "72.5 this morning", "down 2 jin", "I weigh 79", "just weighed 80" — save it to `data/weight.json` via `save-and-check.py` (or `weight-tracker.py save`). A spoken reply alone never counts as recording. This is not limited to scheduled weigh-in days. **Exception:** past or hypothetical mentions ("I used to be 80kg") are not current readings — don't save those.
 
 2. **Single source of truth.** `data/weight.json` is the one authoritative record of body weight.
 
@@ -38,9 +32,15 @@ Non-negotiable. Agents have historically stashed weight in ad-hoc files (`weight
 
 5. **Read forward, never write back.** To show the current weight, read the latest value from `data/weight.json`. Never copy it back into `PLAN.md`.
 
+6. **Only the scripts write weight.json.** Always save through `save-and-check.py` / `weight-tracker.py`. Never write `data/weight.json` directly with `python`/`exec`/file edits — doing so has produced off-schema entries (`{"morning": 60.45}` instead of `{"value": 60.45, "unit": "kg"}`) that break dashboards, weekly reports, and diagnostics. If you need to attach fasting/note context, use `--fasting` / `--note`, not a hand-built shape.
+
 ## Scripts
 
 Script path: `python3 {baseDir}/scripts/weight-tracker.py`
+
+- **Accept any common unit:** kg, lb, lbs, 斤 (=0.5 kg), 公斤. Pass what the user said as `--unit`; the script normalizes it.
+- **Fasting tag:** if the user mentions an empty stomach / morning weigh-in, pass `--fasting` to record it on the entry.
+- **Note:** pass `--note "..."` to attach free-text context (e.g. "post-workout", "clothed").
 
 ### Save + Context — `save-and-check.py` (preferred)
 
@@ -54,7 +54,7 @@ python3 {baseDir}/scripts/save-and-check.py \
   --plan-file {workspaceDir}/PLAN.md \
   --health-profile {workspaceDir}/health-profile.md \
   --user-file {workspaceDir}/USER.md \
-  [--correct]
+  [--correct] [--fasting] [--note "..."]
 ```
 
 Returns:
@@ -79,11 +79,12 @@ python3 {baseDir}/scripts/weight-tracker.py save \
   --data-dir {workspaceDir}/data \
   --value 79.5 --unit kg \
   --tz-offset 28800 \
-  [--correct]
+  [--correct] [--fasting] [--note "..."]
 ```
 
 - Auto-detects new vs correction: if last entry ≤ 30 min ago, overwrites. Otherwise creates new.
 - `--correct`: force overwrite most recent entry (when user explicitly says "that was wrong")
+- `--fasting`: record the reading as a fasting/morning weigh-in. `--note "..."`: attach free-text context.
 
 ### Load — `load`
 
@@ -95,33 +96,25 @@ python3 {baseDir}/scripts/weight-tracker.py load \
   [--from 2026-02-01 --to 2026-03-06]
 ```
 
-Returns entries converted to `--display-unit`, rounded to 1 decimal.
+Always show weight in the user's preferred unit (pass it as `--display-unit`), rounded to 1 decimal.
 
-### Other Commands
+### Correct / Delete / Change Unit
 
-See `references/crud-operations.md` for: `delete`, `update`, `set-unit`.
+See `references/crud-operations.md` for `delete`, `update`, and `set-unit`.
 
 ## Workflow
 
 ### User Reports Weight
 
-1. Read `timezone.json` → `tz_offset`; read `health-profile.md` → Unit Preference (parallel, first session only)
-2. Call `save-and-check.py`:
-   ```bash
-   python3 {baseDir}/scripts/save-and-check.py \
-     --data-dir {workspaceDir}/data \
-     --value <N> --unit <u> --tz-offset <tz> \
-     --plan-file {workspaceDir}/PLAN.md \
-     --health-profile {workspaceDir}/health-profile.md \
-     --user-file {workspaceDir}/USER.md
-   ```
+1. Get `tz_offset` and Unit Preference. Prefer the auto-injected **TOOLS.md Quick Reference** (`tz_offset`, `unit_preference`, `daily_cal_target`) — use those values directly. Only if Quick Reference is missing or outdated, fall back to reading `timezone.json` and `health-profile.md` (in parallel, first session only).
+2. Call `save-and-check.py` with the user's `--value`/`--unit`/`--tz-offset` (full command under [Scripts](#scripts) above). Add `--correct` if the user is fixing a mistaken reading, `--fasting` for an empty-stomach/morning weigh-in, `--note "..."` for any extra context.
 3. Read the response:
    - `save.action`: `"created"` → "Logged ✓"; `"updated"` → "Updated ✓". Show the value in the user's preferred unit.
    - `context.recent_weights`: recent weight entries
    - `context.plan`: plan targets (TDEE, target weight, etc.)
    - `context.active_strategy`: whether an intervention strategy is currently running
    - `context.last_intervention_date`: date of the last intervention
-4. **Decide for yourself whether the weight trend deserves attention.** The core test: **is the change moving in the same direction as the user's goal, and is any deviation a genuine trend rather than day-to-day noise?**
+4. **Decide for yourself whether the weight trend deserves attention.** Default to just logging and confirming — **never comment on a weight change unprompted**; if the user is emotional about it, hand off to the `emotional-support` skill. Only speak up about the trend itself when it genuinely warrants it. The core test: **is the change moving in the same direction as the user's goal, and is any deviation a genuine trend rather than day-to-day noise?**
    - Weight swings ±0.5–1kg naturally every day (water, sodium, bowel movements). A single day inside that band is almost certainly noise and needs no reaction — it takes several days of data to confirm a trend is real.
    - **On track with the goal** (e.g. losing weight when the goal is to lose) → encourage, offer positive reinforcement.
    - **Everyday noise** (1–2 days of minor movement within the normal band) → acknowledge normally, don't probe.
@@ -139,21 +132,8 @@ See `references/crud-operations.md` for: `delete`, `update`, `set-unit`.
 
 ### User Asks for Trend / History
 
-1. Call `load` with appropriate filters and `--display-unit`
-2. Present data (table, summary, or trend description)
-
-### User Wants to Correct / Delete / Change Unit
-
-See `references/crud-operations.md`.
-
-## Interaction Guidelines
-
-- **Record weight whenever mentioned.** Not limited to scheduled days. "今天早上74.5", "刚称了一下79" → call `save`. Exception: past/hypothetical ("我以前80公斤").
-- **Never comment on weight changes unprompted.** Just log and confirm. Emotional reactions → `emotional-support` skill.
-- **Always display in preferred unit**, rounded to 1 decimal.
-- **Accept any common unit**: kg, lb, lbs, 斤 (=0.5 kg), 公斤.
-- **Fasting tag**: if user mentions empty stomach / morning weigh-in → note `fasting: true` in context.
-
+1. Call `load` with appropriate filters and `--display-unit`.
+2. Present the data (table, summary, or trend description).
 
 ## References
 

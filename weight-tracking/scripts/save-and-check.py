@@ -55,14 +55,37 @@ def load_json(path):
         return json.load(f)
 
 
+def _extract_value_unit(entry):
+    """Read (value, unit) tolerating off-schema shapes ({morning:X}/{evening:X}/bare
+    number). Mirrors weight-tracker.extract_value_unit. Returns (None, None) if no
+    numeric value found."""
+    if isinstance(entry, (int, float)):
+        return float(entry), "kg"
+    if isinstance(entry, dict):
+        val = entry.get("value")
+        if val is None:
+            for alt in ("morning", "evening", "weight", "kg", "am", "pm"):
+                if isinstance(entry.get(alt), (int, float)):
+                    val = entry[alt]
+                    break
+        if val is None:
+            return None, None
+        try:
+            return float(val), entry.get("unit", "kg")
+        except (TypeError, ValueError):
+            return None, None
+    return None, None
+
+
 def get_recent_weights(data_dir, tz_offset, limit=14):
     """Return last N weight readings sorted by date."""
     raw = load_json(os.path.join(data_dir, "weight.json"))
     readings = []
     for k, v in sorted(raw.items()):
-        val = v.get("value", v) if isinstance(v, dict) else v
-        unit = v.get("unit", "kg") if isinstance(v, dict) else "kg"
-        readings.append({"date": k[:10], "value": float(val), "unit": unit})
+        val, unit = _extract_value_unit(v)
+        if val is None:
+            continue  # skip unreadable/off-schema entries rather than crash
+        readings.append({"date": k[:10], "value": val, "unit": unit})
     return readings[-limit:]
 
 
@@ -107,6 +130,8 @@ def main():
     parser.add_argument("--unit", default=None)
     parser.add_argument("--tz-offset", type=int, default=0)
     parser.add_argument("--correct", action="store_true")
+    parser.add_argument("--fasting", action="store_true", help="Mark this reading as a fasting/morning weigh-in")
+    parser.add_argument("--note", default=None, help="Optional free-text note for this entry")
     parser.add_argument("--plan-file", default=None)
     parser.add_argument("--health-profile", default=None)
     parser.add_argument("--user-file", default=None)
@@ -140,6 +165,10 @@ def main():
     ]
     if args.correct:
         save_cmd.append("--correct")
+    if args.fasting:
+        save_cmd.append("--fasting")
+    if args.note:
+        save_cmd.extend(["--note", args.note])
 
     save_result, save_err = run_script(save_cmd)
     if not save_result:
