@@ -1,5 +1,14 @@
 # Diet Pattern Detection Response
 
+## Output Banner (HARD RULE)
+
+Every message output by this skill MUST start with the locale-appropriate section banner:
+
+- Chinese (`zh`/`zh-CN`/`zh-TW`/unset): `🔄——饮食模式调整——🔄`
+- English (`en`/`en-*`): `🔄——Diet Mode Adjustment——🔄`
+
+Followed by one blank line, then the message body. The banner is the absolute first line — nothing before it.
+
 ## When `has_pattern` is `true`
 
 The user's actual macro split over 3 consecutive days is closer to a different diet mode than their current one. Notify the user using this format:

@@ -12,6 +12,26 @@ metadata:
 
 > ⚠️ **Cron-only skill.** Never triggered by user messages. Activated by a daily cron job created by `notification-manager` at onboarding completion.
 
+## ⚠️ Output Format (HARD RULE — Never violate)
+
+When this skill sends a message to the user (diet pattern detection result, mode switch suggestion, or any output), the **first line MUST** be the section banner based on user locale:
+
+| USER.md locale | First line |
+|---|---|
+| `zh` / `zh-CN` / `zh-TW` / unset | `🔄——饮食模式调整——🔄` |
+| `en` / `en-*` | `🔄——Diet Mode Adjustment——🔄` |
+
+Then **one blank line**, then the message body.
+
+✅ Correct (Chinese user):
+```
+🔄——饮食模式调整——🔄
+
+📋 我注意到一个有趣的现象...
+```
+
+❌ Wrong — missing banner, or banner not on first line, or no blank line after banner.
+
 ## Trigger
 
 Daily cron job. Start date: `Onboarding Completed` + 3 days (from `health-profile.md > Automation`). Cron time: dinner_time + 3h.
