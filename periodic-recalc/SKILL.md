@@ -1,7 +1,7 @@
 ---
 name: periodic-recalc
 version: 2.2.0
-description: "Recalculates the user's daily calorie target every 4 weeks based on current weight. Updates PLAN.md with new TDEE, calories, and macro ranges. Reviews diet mode fit."
+description: "Recalculates the user's daily calorie target every 4 weeks based on current weight. Updates PLAN.md with new TDEE, calories, and macro ranges."
 ---
 
 ## ⚠️ Output Format (HARD RULE — Never violate)
@@ -89,7 +89,7 @@ Defaults if value not explicitly stated:
 - **Trigger:** Every 4 weeks on Sunday (after weekly-report)
 - **Dependencies:** weight-loss-planner, weight-tracking
 
-Recalculates daily calorie target based on current weight. Updates PLAN.md with new TDEE, calorie target, and macro ranges. Reviews whether actual eating pattern matches the current diet_mode.
+Recalculates daily calorie target based on current weight. Updates PLAN.md with new TDEE, calorie target, and macro ranges. Does NOT change diet mode.
 
 ---
 
@@ -198,20 +198,6 @@ Compose a cycle review + new cycle message for the user.
 }
 ```
 
-**Then** run diet-mode review:
-
-```bash
-python3 {baseDir}/scripts/diet-mode-review.py --workspace {workspaceDir} --days 28
-```
-
-- `action: "recommend_change"` → Ask user if they want to switch diet mode. Frame as: "Your eating has naturally shifted toward [mode] — want to update?"
-  Show a comparison of actual vs expected ranges. **HARD RULES for the comparison:**
-  1. Range numbers **MUST** come from `current_mode_range` and `recommended_mode_range` fields in the script output — never from memory or general knowledge.
-  2. Actual percentages **MUST** come from the `actual_macros` field in the script output.
-  3. **Forbidden:** calculating, estimating, or filling in any percentage number from prior knowledge. If the field is absent, omit that number entirely.
-  4. Suggested display format (three-column): actual (from `actual_macros`) | current mode range (from `current_mode_range`) | recommended mode range (from `recommended_mode_range`).
-- `action: "no_change"` → Silently continue
-- `action: "insufficient_data"` → Silently continue
 
 ### `action: "awaiting_weight"`
 
@@ -273,7 +259,7 @@ The new plan is **already effective** (PLAN.md updated at send time). Handle rep
 | `data/leave.json` | Read | Leave status |
 | `data/pending-recalc.json` | R/W/Delete | Deferred recalc tracking |
 | `data/last-recalc-summary.json` | Write | Recalc history and audit trail |
-| `data/meals/*.json` | Read | Actual eating patterns (diet-mode-review) |
+| `data/meals/*.json` | Read | Actual eating patterns (calorie trend analysis) |
 
 ---
 
