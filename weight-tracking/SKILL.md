@@ -22,7 +22,11 @@ metadata:
 
 Non-negotiable. Agents have historically stashed weight in ad-hoc files (`weight-log.md`) or as a dated ledger inside `PLAN.md`, leaving `data/weight.json` incomplete and breaking badges and dashboards. Don't repeat that.
 
-1. **Always record, never just talk.** Any time the user mentions a weight figure or a change in weight — "72.5 this morning", "down 2 jin", "I weigh 79", "just weighed 80" — save it to `data/weight.json` via `save-and-check.py` (or `weight-tracker.py save`). A spoken reply alone never counts as recording. This is not limited to scheduled weigh-in days. **Exception:** past or hypothetical mentions ("I used to be 80kg") are not current readings — don't save those.
+1. **Always record, never just talk.** Any time the user mentions a weight figure or a change in weight — "72.5 this morning", "down 2 jin", "I weigh 79", "just weighed 80", "现在132.1", "刚才厕所称了下130" — save it to `data/weight.json` via `save-and-check.py` (or `weight-tracker.py save`). A spoken reply alone never counts as recording. This is not limited to scheduled weigh-in days.
+
+   **Non-fasting / off-hour weigh-ins still get recorded.** Post-meal / evening / bathroom-scale / clothed / etc. weigh-ins are ALL saved to `data/weight.json` — attach `--note "post-meal"` / `--note "evening"` / `--note "clothed"` so downstream code can down-weight them from trend calculations. DO NOT skip the save just because the reading is "not standard". Never-recording a value the user explicitly reported is a data-integrity bug: the value only lives in chat history and everything downstream (weekly report, diagnosis, trend chart, dashboard) misses it. If the reading is unusual, still save + explain in the reply why the number may look off ("饭后+水肿,不代表真实体重"), don't refuse to record.
+
+   **Exception:** past or hypothetical mentions ("I used to be 80kg", "上个月还60呢", "目标55") are not current readings — don't save those.
 
 2. **Single source of truth.** `data/weight.json` is the one authoritative record of body weight.
 
