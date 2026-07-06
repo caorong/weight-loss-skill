@@ -616,6 +616,50 @@ def check_leave(workspace_dir, tz_offset, mock_date=None):
 
 
 
+def recent_conversation_block(workspace_dir):
+    """抽取用户最近对话, 供 cron 提醒承接上下文。
+
+    默认关闭 (环境变量 CRON_RECENT_CONTEXT 未开启时返回空), 灰度期在测试服/生产
+    按需打开。调用同目录的 extract-recent.py, 任何失败都静默返回空——绝不因抽取
+    问题阻断提醒。
+
+    开关与参数 (环境变量):
+      CRON_RECENT_CONTEXT       "1"/"true"/"on" 才启用 (默认关)
+      CRON_RECENT_TURNS         最近几轮 (assistant 回复数), 默认 10
+      CRON_RECENT_MAX_CHARS     注入字数上限, 默认 1200
+    """
+    flag = os.environ.get("CRON_RECENT_CONTEXT", "").strip().lower()
+    if flag not in ("1", "true", "on", "yes"):
+        return ""
+
+    turns = os.environ.get("CRON_RECENT_TURNS", "10").strip()
+    max_chars = os.environ.get("CRON_RECENT_MAX_CHARS", "1200").strip()
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extract-recent.py")
+    if not os.path.exists(script):
+        log(f"extract-recent.py 缺失: {script}")
+        return ""
+
+    try:
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, script,
+             "--workspace-dir", workspace_dir,
+             "--turns", turns,
+             "--max-chars", max_chars],
+            capture_output=True, text=True, timeout=8)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        log(f"extract-recent 调用失败: {e}")
+        return ""
+
+    text = (result.stdout or "").strip()
+    if not text:
+        return ""
+    # agent 读到的承接上下文。措辞明确「最近对话」+「据此自然承接」,
+    # 但不强制引用, 避免提醒变成复读机。
+    return ("\n\n最近和用户的对话(供你自然承接, 不要机械复述):\n"
+            + text)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pre-send check for meal/weight reminders")
     parser.add_argument("--workspace-dir", required=True, help="Agent workspace root")
@@ -676,10 +720,11 @@ def main():
     log("All checks passed")
 
     # stage_info 由 engagement_stage check 填入「认领前」的 stage/days_silent
+    recent = recent_conversation_block(args.workspace_dir)
     if stage_info["stage"] >= 2:
-        print(f"SEND recall stage={stage_info['stage']} days_silent={stage_info.get('days_silent', 0)}")
+        print(f"SEND recall stage={stage_info['stage']} days_silent={stage_info.get('days_silent', 0)}{recent}")
     else:
-        print("SEND")
+        print(f"SEND{recent}")
 
 
 if __name__ == "__main__":

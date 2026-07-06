@@ -22,6 +22,7 @@ def _load(name, path):
 pre_send = _load("pre_send_check", SKILL / "pre-send-check.py")
 holiday = _load("holiday_dispatcher", SKILL / "holiday-dispatcher.py")
 load_meals = _load("load_meals", SKILL / "load-meals.py")
+extract_recent = _load("extract_recent", SKILL / "extract-recent.py")
 
 
 class TestGetLocalDate:
@@ -130,3 +131,92 @@ class TestLoadMealsMigrateMeal:
         })
         assert m["calories"] == 300
         assert m["protein"] == 15
+
+
+class TestExtractRecent:
+    """extract-recent.py:轮次截取/清洗/字数上限(纯函数,构造临时 jsonl)。"""
+
+    def _write_session(self, tmp_path, entries):
+        import json
+        f = tmp_path / "sess.jsonl"
+        with open(f, "w", encoding="utf-8") as fh:
+            for e in entries:
+                fh.write(json.dumps(e, ensure_ascii=False) + "\n")
+        return str(f)
+
+    def _msg(self, role, text, ts):
+        return {"type": "message", "timestamp": ts,
+                "message": {"role": role, "content": text}}
+
+    def test_empty_file_returns_empty(self, tmp_path):
+        f = self._write_session(tmp_path, [])
+        assert extract_recent.extract_recent(f, turns=10) == ""
+
+    def test_missing_file_returns_empty(self):
+        assert extract_recent.extract_recent("/nonexistent/x.jsonl") == ""
+
+    def test_basic_user_assistant(self, tmp_path):
+        f = self._write_session(tmp_path, [
+            self._msg("user", "我今天没怎么动", "2026-07-06T01:00:00.000Z"),
+            self._msg("assistant", "没关系,明天散个步就好", "2026-07-06T01:00:05.000Z"),
+        ])
+        out = extract_recent.extract_recent(f, turns=10)
+        assert "用户: 我今天没怎么动" in out
+        assert "你: 没关系" in out
+
+    def test_turns_limit_by_assistant(self, tmp_path):
+        entries = []
+        for i in range(5):
+            entries.append(self._msg("user", f"u{i}", f"2026-07-06T01:0{i}:00.000Z"))
+            entries.append(self._msg("assistant", f"a{i}", f"2026-07-06T01:0{i}:05.000Z"))
+        f = self._write_session(tmp_path, entries)
+        out = extract_recent.extract_recent(f, turns=2)
+        # 只保留最后 2 个 assistant 轮 → a3,a4;a0/a1/a2 不出现
+        assert "a4" in out and "a3" in out
+        assert "a0" not in out and "a2" not in out
+
+    def test_skips_noise(self, tmp_path):
+        f = self._write_session(tmp_path, [
+            self._msg("user", "NO_REPLY", "2026-07-06T01:00:00.000Z"),
+            self._msg("assistant", "HEARTBEAT_OK", "2026-07-06T01:00:01.000Z"),
+            self._msg("user", "真实问题", "2026-07-06T01:00:02.000Z"),
+            self._msg("assistant", "真实回复", "2026-07-06T01:00:03.000Z"),
+        ])
+        out = extract_recent.extract_recent(f, turns=10)
+        assert "NO_REPLY" not in out
+        assert "HEARTBEAT_OK" not in out
+        assert "真实问题" in out
+
+    def test_cleans_metadata_and_media(self, tmp_path):
+        noisy = ('Conversation info (untrusted metadata):\n```json\n{"chat_id":"x"}\n```\n'
+                 '[media attached: /abs/path.png (image/png) | /abs/path.png]\n吃了个苹果')
+        f = self._write_session(tmp_path, [
+            self._msg("user", noisy, "2026-07-06T01:00:00.000Z"),
+            self._msg("assistant", "记下了", "2026-07-06T01:00:01.000Z"),
+        ])
+        out = extract_recent.extract_recent(f, turns=10)
+        assert "chat_id" not in out
+        assert "/abs/path.png" not in out
+        assert "[图片]" in out
+        assert "吃了个苹果" in out
+
+    def test_max_chars_truncates(self, tmp_path):
+        entries = []
+        for i in range(10):
+            entries.append(self._msg("user", "长" * 100, f"2026-07-06T01:0{i}:00.000Z"))
+            entries.append(self._msg("assistant", "回" * 100, f"2026-07-06T01:0{i}:05.000Z"))
+        f = self._write_session(tmp_path, entries)
+        out = extract_recent.extract_recent(f, turns=10, max_chars=200)
+        assert len(out) <= 260  # 上限 + 单行冗余
+
+    def test_content_as_block_list(self, tmp_path):
+        f = self._write_session(tmp_path, [
+            {"type": "message", "timestamp": "2026-07-06T01:00:00.000Z",
+             "message": {"role": "user",
+                         "content": [{"type": "text", "text": "块状内容"},
+                                     {"type": "image", "text": ""}]}},
+            self._msg("assistant", "收到", "2026-07-06T01:00:01.000Z"),
+        ])
+        out = extract_recent.extract_recent(f, turns=10)
+        assert "块状内容" in out
+        assert "[图片]" in out
