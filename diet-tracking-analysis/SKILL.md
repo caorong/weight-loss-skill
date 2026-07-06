@@ -175,7 +175,9 @@ Use `meal_checkin` results to compose your reply. The only tool call allowed her
 
 **Card rendering trigger = this turn's `meal_checkin` returns a non-empty `dishes` array AND a non-null `evaluation.daily_total`** (i.e. this turn will show the user the full ①② calorie breakdown + daily progress). When both are present, render the card — **regardless of whether `action` is `create`, `append`, or a `correct` that carries fresh dish/evaluation data**. Only when this turn does NOT output ①② (pure `delete`, or a bare confirmation with no `dishes`/`evaluation`) keep plain text and skip the card.
 
-**One-line decision rule for the agent:** look at the `meal_checkin` result — if `dishes` is non-empty AND `evaluation.daily_total` is present, render the card; otherwise plain text.
+**`correct`（纠正）一律强制重出卡，无自由裁量权：** 只要 `correct` 成功且返回 `dishes` 非空 + `evaluation.daily_total` 存在，就**必须**重新渲染卡片，与 `create` / `append` 完全一视同仁。**明确禁止**以下跳卡行为——不得因为"修改幅度小 / 热量变化不大 / 数据基本没变 / 卡片会几乎一样"等任何理由，跳过渲卡改用纯文字回复。（已观察到 agent 在小幅纠正如把某菜 280g 改成 127g 时自行判断"数据基本没变就省卡"，这是错的。）纠正一律重出卡，保证卡永远反映最新数据。
+
+**One-line decision rule for the agent:** look at the `meal_checkin` result — if `dishes` is non-empty AND `evaluation.daily_total` is present, render the card; otherwise plain text. This rule is **unconditional** — the size of a `correct` never exempts it.
 
 For any turn that outputs the ①② breakdown (create / append / detail-bearing correct):
 
