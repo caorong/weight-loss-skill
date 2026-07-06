@@ -204,13 +204,21 @@ For any turn that outputs the ①② breakdown (create / append / detail-bearing
    - **`dish_name`** (each dish) must also match `lang`. For English users, write dish names in English (e.g. `"Pork Cutlet Curry Rice"`, not `"炸猪排咖喱饭"`).
    - Use `meal_calories` = this meal's total calories.
 
-   **Multi-meal (多餐合并):** When `meal_checkin` returns `result.multi === true`, `result.meals` is an array — one element per meal, each carrying that meal's own `meal_detection` (read `meal_name` from it), `dishes`, and `produce`. All meals are already saved. Render **one** card (not one per meal), grouping dishes by meal via the `meal_groups` field:
-   - `meal_label`: 合并餐名，按 `lang` 拼实际餐次。zh 用 `早餐+午餐+晚餐`（按实到的餐次顺序）；en 用 `Breakfast+Lunch+Dinner`.
-   - `meal_calories`: 各餐总热量相加。
-   - `meal_groups`: 数组，按早→午→晚顺序，每个元素 `{ "label": "<餐名,按 lang>", "calories": <该餐总热量>, "dishes": [{ "dish_name": "...", "total_g": <重量g>, "calories": <热量> }] }`.
-   - `daily` / `macros` / `produce`: 用 `result.evaluation`（已是最后一餐 = 全天累计），直接照搬，与单餐时同。
-   - 单餐时**不写** `meal_groups`，仍用 `dishes` 字段（向后兼容；模板两者都支持）。仍只渲一张卡，调一次 `render-meal-card.cjs`。
-   - 文字回复（③建议等）照旧；①② 现在都在这张合并卡里。
+   **Multi-meal（多餐合并）：** 合并渲染有**两种触发条件，任一满足即走合并** —— 两种情况都只渲**一张**卡、只调**一次** `render-meal-card.cjs`，合并规则完全一致：
+
+   **触发条件 1（单次调用返回 multi）：** `meal_checkin` 返回 `result.multi === true`，`result.meals` 是数组 —— 每个元素对应一餐，各自带该餐的 `meal_detection`（从中读 `meal_name`）、`dishes`、`produce`；`result.evaluation` 已是全天累计。所有餐已保存。
+
+   **触发条件 2（本轮多次调用）：** 用户在**同一个 turn** 内连发多条消息、每条一餐，你对每条各调了一次 `meal_checkin`。参考 abort-recovery 章节"扫描本轮已调用"的写法 —— 先数一下**本轮已成功保存餐次的 `meal_checkin` 调用次数**（`save.status === "ok"`）。当本轮 **≥2 次** `meal_checkin` 都保存成功时，同样走合并渲染：把这几次调用的结果**合并成一张卡**，而不是只用最后一次调用的 `dishes` 去渲染（只用最后一次会漏掉前面的餐）。
+   > ⚠️ 与 abort-recovery 区分：abort-recovery（Round 0 检测到**上一轮被中断**、丢了餐）是**每餐各渲一张卡**；这里触发条件 2 是**本轮正常连发多餐**，要合并成**一张**卡。
+
+   **合并渲染规则（两种触发通用）：**
+   - `meal_label`: 合并餐名，按 `lang` 拼实际餐次，按 早→午→晚→加餐 顺序。zh 用 `早餐+午餐`（`早餐+午餐+晚餐`）；en 用 `Breakfast+Lunch`（`Breakfast+Lunch+Dinner`）。
+   - `meal_calories`: 本轮各餐总热量相加。
+   - `meal_groups`: 数组，按 早→午→晚 顺序，每个元素 `{ "label": "<餐名,按 lang>", "calories": <该餐总热量>, "dishes": [{ "dish_name": "...", "total_g": <重量g>, "calories": <热量> }] }`。
+   - `daily` / `macros` / `produce`: 用**最后一次 `meal_checkin` 的 `evaluation`**（已是全天累计；触发条件 1 即 `result.evaluation`），直接照搬，与单餐时同。
+   - 数据来源：触发条件 1 从 `result.meals[]` 逐餐取 `dishes`/`meal_detection`；触发条件 2 从**每一次** `meal_checkin` 调用各自的返回结果取 `dishes`/`meal_detection`，一次调用对应 `meal_groups` 里一个元素。
+   - 单餐时**不写** `meal_groups`，仍用 `dishes` 字段（向后兼容；模板两者都支持）。
+   - 文字回复（③建议等）照旧、只写一次（基于全天累计）；①② 现在都在这张合并卡里，不在文字里重复 ①②。
 
 2. **Render the card** — call `exec` once per meal (once for a normal single-meal turn; once per meal in the 2-meals abort-recovery case above):
    ```
