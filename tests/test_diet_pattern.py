@@ -52,19 +52,34 @@ class TestModeDistance:
         assert d == 0.0
 
     def test_below_range_adds_gap(self):
-        # protein 15 < 25 → gap 10, carbs 40 ok, fat 25 ok
-        d = mod._mode_distance(p_pct=15, c_pct=40, f_pct=25, mode="balanced")
+        # balanced carbs 35-45: carbs 25 < 35 → gap 10, fat 25 ok
+        # (蛋白维度已改为按克数评分,不传 protein_g → 贡献 0;见下方 protein-gram 测试)
+        d = mod._mode_distance(p_pct=15, c_pct=25, f_pct=25, mode="balanced")
         assert d == 10.0
 
     def test_above_range_adds_gap(self):
-        # protein 40 > 35 → gap 5, carbs 40 ok, fat 25 ok
-        d = mod._mode_distance(p_pct=40, c_pct=40, f_pct=25, mode="balanced")
+        # balanced fat 20-35: fat 40 > 35 → gap 5, carbs 40 ok
+        d = mod._mode_distance(p_pct=40, c_pct=40, f_pct=40, mode="balanced")
         assert d == 5.0
 
     def test_multi_dimension_sum(self):
-        # protein 20 < 25 (5) + carbs 30 < 35 (5) + fat 15 < 20 (5) = 15
+        # carbs 30 < 35 (5) + fat 15 < 20 (5) = 10
         d = mod._mode_distance(p_pct=20, c_pct=30, f_pct=15, mode="balanced")
-        assert d == 15.0
+        assert d == 10.0
+
+    def test_protein_grams_within_range_zero(self):
+        # balanced 蛋白 1.2-1.6 g/kg;target_weight=60 → 区间 72-96g
+        # protein_g=80 落区间内 → 蛋白贡献 0;carbs/fat 也 ok → 距离 0
+        d = mod._mode_distance(p_pct=30, c_pct=40, f_pct=25, mode="balanced",
+                               protein_g=80, target_weight=60)
+        assert d == 0.0
+
+    def test_protein_grams_below_range_adds_gap(self):
+        # target_weight=60 → 下限 72g;protein_g=36 → (72-36)/72*100 = 50
+        # carbs/fat 落区间 → 总距离 50
+        d = mod._mode_distance(p_pct=30, c_pct=40, f_pct=25, mode="balanced",
+                               protein_g=36, target_weight=60)
+        assert d == 50.0
 
     def test_keto_far_from_balanced_diet(self):
         # 高碳饮食算 keto 距离(keto carbs 5-10),50 - 10 = 40
