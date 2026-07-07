@@ -620,8 +620,14 @@ def recent_conversation_block(workspace_dir):
     """抽取用户最近对话, 供 cron 提醒承接上下文。
 
     默认关闭 (环境变量 CRON_RECENT_CONTEXT 未开启时返回空), 灰度期在测试服/生产
-    按需打开。调用同目录的 extract-recent.py, 任何失败都静默返回空——绝不因抽取
-    问题阻断提醒。
+    按需打开。走 data-api 的 /v1/conversation/recent 端点 (数据源是 chat-logger
+    的 messages 表 = reply-filter 投递后的干净文本, 非带内部推理的 transcript)。
+    任何失败都静默返回空——绝不因抽取问题阻断提醒。
+
+    为什么走 data-api 而非本地读文件/直连 DB:
+      - messages 表才是"用户视角干净对话"(transcript 混着内部 ReAct 推理);
+      - Python 直连 DB 有三重坑(无 pymysql / 密码带引号需特殊解析 / RDS 白名单),
+        data-api 已连库有池, 且 pre-send-check 已在调它的 lifecycle 端点, 同构。
 
     开关与参数 (环境变量):
       CRON_RECENT_CONTEXT       "1"/"true"/"on" 才启用 (默认关)
@@ -632,26 +638,21 @@ def recent_conversation_block(workspace_dir):
     if flag not in ("1", "true", "on", "yes"):
         return ""
 
-    turns = os.environ.get("CRON_RECENT_TURNS", "10").strip()
-    max_chars = os.environ.get("CRON_RECENT_MAX_CHARS", "1200").strip()
-    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extract-recent.py")
-    if not os.path.exists(script):
-        log(f"extract-recent.py 缺失: {script}")
-        return ""
+    account_id = _account_id(workspace_dir)
+    turns = os.environ.get("CRON_RECENT_TURNS", "10").strip() or "10"
+    max_chars = os.environ.get("CRON_RECENT_MAX_CHARS", "1200").strip() or "1200"
 
     try:
-        import subprocess
-        result = subprocess.run(
-            [sys.executable, script,
-             "--workspace-dir", workspace_dir,
-             "--turns", turns,
-             "--max-chars", max_chars],
-            capture_output=True, text=True, timeout=8)
-    except (subprocess.TimeoutExpired, OSError) as e:
-        log(f"extract-recent 调用失败: {e}")
+        import urllib.parse
+        qs = urllib.parse.urlencode({"turns": turns, "maxChars": max_chars})
+        url = f"{LIFECYCLE_API}/v1/conversation/recent/{account_id}?{qs}"
+        with urllib.request.urlopen(url, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except (urllib.error.URLError, json.JSONDecodeError, OSError, ValueError) as e:
+        log(f"conversation/recent 调用失败 for {account_id}: {e}")
         return ""
 
-    text = (result.stdout or "").strip()
+    text = (data.get("text") or "").strip()
     if not text:
         return ""
     # agent 读到的承接上下文。措辞明确「最近对话」+「据此自然承接」,
