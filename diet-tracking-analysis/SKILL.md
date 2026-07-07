@@ -144,6 +144,9 @@ Do NOT call `image`, `exec`, or any script in Round 1. Everything meal-related g
 
 ### Round 2: Compose reply
 
+> 🔒 **出卡铁律(先于一切):本轮 `meal_checkin` 返回 `dishes` 非空 + `evaluation.daily_total` 存在 → 本轮必须出卡(调 `render-meal-card.cjs`),先渲卡再写文字。**
+> **判定只看这两个字段,不由你裁量:`create`/`append`/`correct` 一视同仁;correct 改动再小(如 280g→127g)也重出卡;本轮再忙(饭前建议 eaten:false/说教/追问/补录确认)也先出卡再说别的。漏出卡 = 本轮失败。**
+
 Use `meal_checkin` results to compose your reply. The only tool call allowed here is the **one** `exec` to render the meal card (see "Round 2 output flow" below); `meal_checkin` already saved the meal and returned evaluation.
 
 > **What the plugin already computed (do NOT re-derive):**
@@ -172,6 +175,8 @@ Use `meal_checkin` results to compose your reply. The only tool call allowed her
 - If any meal's render fails (exec non-zero): degrade that case to the plain-text ①②③ fallback for ALL meals (don't mix one card + one text).
 
 #### Round 2 output flow
+
+> 判定标准见本节开头「🔒 出卡铁律」。以下为细节补充。
 
 **Card rendering trigger = this turn's `meal_checkin` returns a non-empty `dishes` array AND a non-null `evaluation.daily_total`** (i.e. this turn will show the user the full ①② calorie breakdown + daily progress). When both are present, render the card — **regardless of whether `action` is `create`, `append`, or a `correct` that carries fresh dish/evaluation data**. Only when this turn does NOT output ①② (pure `delete`, or a bare confirmation with no `dishes`/`evaluation`) keep plain text and skip the card.
 
