@@ -21,7 +21,6 @@ Exit codes:
 import argparse
 import json
 import os
-import subprocess
 import sys
 from datetime import timezone, timedelta
 from zoneinfo import ZoneInfo
@@ -92,22 +91,32 @@ def _expand_field(field: str, lo: int, hi: int) -> list[int]:
 
 
 def get_existing_jobs() -> list[dict]:
-    """Fetch all cron jobs from the gateway."""
+    """Read all cron jobs from gateway's persisted state file.
+
+    Historically shelled out to `openclaw cron list --json`. That CLI path
+    hard-caps the response at 200 jobs (openclaw src/cron/service/ops.ts
+    Math.min(200, ...)), and does not expose --offset/--limit for pagination.
+    In production with 900+ jobs, the CLI silently dropped 700+ from the
+    count map, so the allocator thought most minutes were empty ⇒ never
+    adjusted anything ⇒ 21:00 accumulated 60+ Product tips and 44+ Weekly
+    reports, all firing at the same instant and swamping Bedrock TPM
+    (2026-07-06 21:00 incident).
+
+    Reading jobs.json directly avoids the cap: no CLI, no 200-limit, and
+    also faster (no node fork + WebSocket handshake). Slight staleness
+    (jobs.json is atomically rewritten by the gateway on every cron
+    mutation) is acceptable for slot allocation.
+    """
+    jobs_path = os.path.join(_STATE_DIR, "cron", "jobs.json")
     try:
-        result = subprocess.run(
-            ["openclaw", "cron", "list", "--json"],
-            capture_output=True,
-            text=True,
-            timeout=15,
-            cwd=_STATE_DIR,
-        )
-        if result.returncode != 0:
-            print(f"WARNING: cron list failed: {result.stderr}", file=sys.stderr)
-            return []
-        data = json.loads(result.stdout)
+        with open(jobs_path) as f:
+            data = json.load(f)
         return data.get("jobs", [])
+    except FileNotFoundError:
+        print(f"WARNING: jobs.json not found at {jobs_path}", file=sys.stderr)
+        return []
     except Exception as e:
-        print(f"WARNING: cron list error: {e}", file=sys.stderr)
+        print(f"WARNING: read jobs.json failed: {e}", file=sys.stderr)
         return []
 
 
