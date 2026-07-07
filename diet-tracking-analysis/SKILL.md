@@ -144,8 +144,9 @@ Do NOT call `image`, `exec`, or any script in Round 1. Everything meal-related g
 
 ### Round 2: Compose reply
 
-> 🔒 **出卡铁律(先于一切):本轮 `meal_checkin` 返回 `dishes` 非空 + `evaluation.daily_total` 存在 → 本轮必须出卡(调 `render-meal-card.cjs`),先渲卡再写文字。**
-> **判定只看这两个字段,不由你裁量:`create`/`append`/`correct` 一视同仁;correct 改动再小(如 280g→127g)也重出卡;本轮再忙(饭前建议 eaten:false/说教/追问/补录确认)也先出卡再说别的。漏出卡 = 本轮失败。**
+> 🔒 **CARD RENDERING IS MANDATORY (decide this FIRST, before any text).** If this turn's `meal_checkin` returns a non-empty `dishes` array AND a non-null `evaluation.daily_total` → you MUST render the card (`render-meal-card.cjs`) THIS turn, and render it BEFORE writing any text.
+> **The decision is purely these two fields — never your judgment.** `create` / `append` / `correct` are treated identically. A tiny `correct` (e.g. 280g → 127g) still re-renders. No matter how busy this turn is (pre-meal `eaten:false` advice / lecturing / clarifying / append confirmation), render the card FIRST. **No card = turn FAILED.**
+> Only skip the card when this turn outputs NO ①② breakdown — pure `delete`, or a bare confirmation with no `dishes`/`evaluation` → plain text.
 
 Use `meal_checkin` results to compose your reply. The only tool call allowed here is the **one** `exec` to render the meal card (see "Round 2 output flow" below); `meal_checkin` already saved the meal and returned evaluation.
 
@@ -176,13 +177,7 @@ Use `meal_checkin` results to compose your reply. The only tool call allowed her
 
 #### Round 2 output flow
 
-> 判定标准见本节开头「🔒 出卡铁律」。以下为细节补充。
-
-**Card rendering trigger = this turn's `meal_checkin` returns a non-empty `dishes` array AND a non-null `evaluation.daily_total`** (i.e. this turn will show the user the full ①② calorie breakdown + daily progress). When both are present, render the card — **regardless of whether `action` is `create`, `append`, or a `correct` that carries fresh dish/evaluation data**. Only when this turn does NOT output ①② (pure `delete`, or a bare confirmation with no `dishes`/`evaluation`) keep plain text and skip the card.
-
-**`correct`（纠正）一律强制重出卡，无自由裁量权：** 只要 `correct` 成功且返回 `dishes` 非空 + `evaluation.daily_total` 存在，就**必须**重新渲染卡片，与 `create` / `append` 完全一视同仁。**明确禁止**以下跳卡行为——不得因为"修改幅度小 / 热量变化不大 / 数据基本没变 / 卡片会几乎一样"等任何理由，跳过渲卡改用纯文字回复。（已观察到 agent 在小幅纠正如把某菜 280g 改成 127g 时自行判断"数据基本没变就省卡"，这是错的。）纠正一律重出卡，保证卡永远反映最新数据。
-
-**One-line decision rule for the agent:** look at the `meal_checkin` result — if `dishes` is non-empty AND `evaluation.daily_total` is present, render the card; otherwise plain text. This rule is **unconditional** — the size of a `correct` never exempts it.
+> Whether to render is decided by the 🔒 rule at the top of this section. Below is HOW to render once that condition is met.
 
 For any turn that outputs the ①② breakdown (create / append / detail-bearing correct):
 
