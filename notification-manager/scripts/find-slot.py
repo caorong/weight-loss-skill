@@ -29,7 +29,11 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", "..", "..", ".."))
 _STATE_DIR = os.environ.get("OPENCLAW_STATE_DIR", os.path.join(_PROJECT_ROOT, ".openclaw-gateway"))
 
-MAX_PER_MINUTE = 2
+# Bedrock TPM 换 anthropic 直连之后 3-4 个 job/min 的爆点也远低于 TPM 上限,
+# 提高上限让 find-slot 能把 job 压平到实际有位置的分钟,减少 fallback 到 base
+# cron 造成 21:00/11:45/8:30 累积热点(2026-07-06 事故 → 2026-07-08 rebalance
+# → 新用户 batch-create-reminders 撞满原窗口再 fallback 回原点)。
+MAX_PER_MINUTE = 4
 
 
 def cron_to_utc_minutes(expr: str, tz_name: str) -> list[int]:
