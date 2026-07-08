@@ -3,7 +3,20 @@ set -euo pipefail
 
 # batch-create-reminders.sh — Create all reminder cron jobs in parallel.
 #
-# Two-phase execution:
+# ⭐ Detach-first execution model:
+#   When called without OPENCLAW_BATCH_DETACHED=1, the script re-execs itself
+#   under setsid+nohup in a new process group with stdout/stderr redirected to
+#   /tmp/batch-create-reminders/<agent>-<epoch>.log, then exits 0 immediately.
+#   The parent (agent's exec tool session) can be killed by tool timeout — the
+#   detached child survives because it's in its own session/process group.
+#
+#   This fixes the case where the agent's exec tool has a 30s timeout and the
+#   full batch (Phase 1 slot allocation + Phase 2 parallel cron.add's) takes
+#   45-90s. Previously the tool timeout would SIGTERM the shell, cascade-kill
+#   the 8 background `openclaw cron add` children, and leave 6/8 cron jobs
+#   never created.
+#
+# Two-phase execution (in detached child):
 #   Phase 1 (serial)   — collect job definitions, then call find-slot.py
 #                        --batch-file once to allocate all time slots in a
 #                        single cron list fetch. This prevents race conditions
@@ -55,6 +68,29 @@ if [[ -z "$CHANNEL" ]];   then echo "ERROR: --channel is required" >&2;   exit 1
 if [[ -z "$WORKSPACE" ]]; then echo "ERROR: --workspace is required" >&2; exit 1; fi
 if [[ ! -d "$WORKSPACE" ]]; then
   echo "ERROR: Workspace directory does not exist: $WORKSPACE" >&2; exit 1
+fi
+
+# ⭐ Detach guard: re-exec self via setsid+nohup so we survive parent shell death.
+# Dry-run stays foreground (agent needs to see the plan).
+if [[ "${OPENCLAW_BATCH_DETACHED:-}" != "1" && "$DRY_RUN" == "false" ]]; then
+  LOG_DIR="/tmp/batch-create-reminders"
+  mkdir -p "$LOG_DIR"
+  LOG_FILE="$LOG_DIR/${AGENT}-$(date +%s).log"
+  # Preserve original argv verbatim (bash arrays via env don't survive setsid;
+  # use a marker + reparse via the flags we already extracted).
+  export OPENCLAW_BATCH_DETACHED=1
+  setsid nohup bash "$0" \
+    --agent "$AGENT" \
+    --channel "$CHANNEL" \
+    --workspace "$WORKSPACE" \
+    $([[ "$SKIP_EXISTING" == "true" ]] && echo "--skip-existing") \
+    $([[ "$ONLY_TYPE" != "all" ]] && echo "--only $ONLY_TYPE") \
+    >"$LOG_FILE" 2>&1 </dev/null &
+  CHILD_PID=$!
+  disown "$CHILD_PID" 2>/dev/null || true
+  echo "batch-create-reminders detached: pid=$CHILD_PID log=$LOG_FILE"
+  echo "tail -f '$LOG_FILE' to watch progress"
+  exit 0
 fi
 
 HEALTH_PROFILE="$WORKSPACE/health-profile.md"
