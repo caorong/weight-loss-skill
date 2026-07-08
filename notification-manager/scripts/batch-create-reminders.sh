@@ -70,29 +70,6 @@ if [[ ! -d "$WORKSPACE" ]]; then
   echo "ERROR: Workspace directory does not exist: $WORKSPACE" >&2; exit 1
 fi
 
-# ⭐ Detach guard: re-exec self via setsid+nohup so we survive parent shell death.
-# Dry-run stays foreground (agent needs to see the plan).
-if [[ "${OPENCLAW_BATCH_DETACHED:-}" != "1" && "$DRY_RUN" == "false" ]]; then
-  LOG_DIR="/tmp/batch-create-reminders"
-  mkdir -p "$LOG_DIR"
-  LOG_FILE="$LOG_DIR/${AGENT}-$(date +%s).log"
-  # Preserve original argv verbatim (bash arrays via env don't survive setsid;
-  # use a marker + reparse via the flags we already extracted).
-  export OPENCLAW_BATCH_DETACHED=1
-  setsid nohup bash "$0" \
-    --agent "$AGENT" \
-    --channel "$CHANNEL" \
-    --workspace "$WORKSPACE" \
-    $([[ "$SKIP_EXISTING" == "true" ]] && echo "--skip-existing") \
-    $([[ "$ONLY_TYPE" != "all" ]] && echo "--only $ONLY_TYPE") \
-    >"$LOG_FILE" 2>&1 </dev/null &
-  CHILD_PID=$!
-  disown "$CHILD_PID" 2>/dev/null || true
-  echo "batch-create-reminders detached: pid=$CHILD_PID log=$LOG_FILE"
-  echo "tail -f '$LOG_FILE' to watch progress"
-  exit 0
-fi
-
 HEALTH_PROFILE="$WORKSPACE/health-profile.md"
 USER_MD="$WORKSPACE/USER.md"
 
@@ -113,6 +90,28 @@ fi
 
 if [[ ! -f "$HEALTH_PROFILE" ]]; then
   echo "ERROR: health-profile.md not found: $HEALTH_PROFILE" >&2; exit 1
+fi
+
+# ⭐ Detach guard: re-exec self via setsid+nohup so we survive parent shell death.
+# Placed AFTER validation errors so caller learns about invalid args synchronously.
+# Dry-run stays foreground (agent needs to see the plan).
+if [[ "${OPENCLAW_BATCH_DETACHED:-}" != "1" && "$DRY_RUN" == "false" ]]; then
+  LOG_DIR="/tmp/batch-create-reminders"
+  mkdir -p "$LOG_DIR"
+  LOG_FILE="$LOG_DIR/${AGENT}-$(date +%s).log"
+  export OPENCLAW_BATCH_DETACHED=1
+  setsid nohup bash "$0" \
+    --agent "$AGENT" \
+    --channel "$CHANNEL" \
+    --workspace "$WORKSPACE" \
+    $([[ "$SKIP_EXISTING" == "true" ]] && echo "--skip-existing") \
+    $([[ "$ONLY_TYPE" != "all" ]] && echo "--only $ONLY_TYPE") \
+    >"$LOG_FILE" 2>&1 </dev/null &
+  CHILD_PID=$!
+  disown "$CHILD_PID" 2>/dev/null || true
+  echo "batch-create-reminders detached: pid=$CHILD_PID log=$LOG_FILE"
+  echo "tail -f '$LOG_FILE' to watch progress"
+  exit 0
 fi
 
 # --- Helpers ---
