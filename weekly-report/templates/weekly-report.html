@@ -3,33 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>周报</title>
+<title>__BRAND__</title>
 <link href="https://fonts.googleapis.com/css2?family=Irish+Grover&display=swap" rel="stylesheet">
-<link href="/fonts/notoserif/notoserif.css" rel="stylesheet">
+<link href="/fonts/notosans/notosans.css" rel="stylesheet">
 <style>
+@font-face { font-family: "Poppins"; font-style: normal; font-weight: 700; font-display: swap; src: url("https://nanorhino-openclaw-user-dashboard.chatlingxi.com/fonts/poppins-700.woff2") format("woff2"); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'STSong', serif; background: #FAFAFA; color: #333; line-height: 1.5; font-size: 14px; -webkit-text-size-adjust: 100%; font-feature-settings: "tnum"; }
-.page { max-width: 800px; margin: 0 auto; padding: 0 1.5rem 2rem; }
-.report-header { text-align: center; margin-top: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid #F3F4F6; }
-.report-header h1 { font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.3rem; }
-.report-header .subtitle { font-size: 0.85rem; color: #666; }
-.report-header .date-range { font-size: 0.75rem; color: #aaa; margin-top: 0.2rem; }
-.report-card { background: #fff; border: none; border-radius: 16px; margin-bottom: 1.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+body { font-family: 'Noto Sans SC', 'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', system-ui, sans-serif; background: #FAFAFA; color: #333; line-height: 1.5; font-size: 14px; -webkit-text-size-adjust: 100%; font-feature-settings: "tnum"; }
+.page { max-width: 800px; margin: 0 auto; padding: 12px 16px 2rem; background: #FAFAFA; }
+.report-header { text-align: center; margin-top: 0.375rem; margin-bottom: 0.3rem; padding-bottom: 0.25rem; }
+.report-header h1 { font-size: 1.5rem; font-weight: 900; color: #1a1a1a; margin-bottom: 0.15rem; letter-spacing: 0.06em; }
+.report-header h1 .wk-num { color: #D73C63; font-family: "Poppins", sans-serif; font-weight: 700; font-size: 1.55em; }
+.report-header .subtitle { font-size: 0.78rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.report-header .date-range { font-size: 0.75rem; color: #aaa; margin-top: 0.1rem; }
+.report-card { background: #fff; border: none; border-radius: 16px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-header { padding: 16px 20px 0; font-family: "Poppins", system-ui, "PingFang SC", -apple-system, sans-serif; font-size: 14px; font-weight: 500; color: #6B7280; border-bottom: none; }
 .card-body { padding: 16px 20px; }
+.card-body.cal-body { padding-top: 32px; }
 .card-commentary { font-size: 0.85rem; color: #666; padding: 0.6rem 21px 0.8rem; border-top: 1px solid #F3F4F6; line-height: 1.6; }
 .logging-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 0.3rem; }
 .logging-grid .day-label { font-size: 0.78rem; color: #888; font-weight: 500; padding: 0.3rem 0; }
 .logging-grid .day-cells { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 0.2rem 0 0.3rem; }
 .logging-grid .meal-cell { width: 18px; height: 8px; border-radius: 3px; background: #F3F4F6; }
-.logging-grid .meal-cell.hit { background: #FADCE4; }
+.logging-grid .meal-cell.hit { background: #F2A0B5; }
 .logging-summary { text-align: center; font-size: 0.85rem; font-weight: 600; color: #333; padding-top: 0.5rem; }
-.meal-tally { display: flex; justify-content: center; gap: 20px; padding-top: 14px; margin-top: 10px; border-top: 1px solid #F3F4F6; }
-.meal-tally .tally-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.meal-tally .tally-dot { width: 20px; height: 6px; border-radius: 3px; background: #FADCE4; }
-.meal-tally .tally-num { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; letter-spacing: 0.5px; }
-.meal-tally .tally-num .denom { color: #9CA3AF; font-weight: 500; font-size: 0.78rem; margin-left: 1px; }
-.meal-tally .tally-label { font-size: 0.7rem; color: #9CA3AF; font-weight: 500; letter-spacing: 0.5px; }
+.meal-tally { display: flex; justify-content: space-between; gap: 10px; padding-top: 12px; margin-top: 8px; }
+.meal-tally .tally-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0px; background: #F5F5F7; border-radius: 14px; padding: 7px 4px 6px; }
+.meal-tally .tally-mealname { font-size: 0.82rem; font-weight: 700; color: #1a1a1a; }
+.meal-tally .tally-num { font-weight: 800; color: #1a1a1a; }
+.meal-tally .tally-num .cur { font-size: 1.5rem; color: #D73C63; font-family: "Poppins", sans-serif; font-weight: 700; }
+.meal-tally .tally-num .denom { color: #9CA3AF; font-weight: 600; font-size: 0.85rem; margin-left: 2px; }
+.meal-tally .tally-delta { font-size: 0.72rem; color: #9CA3AF; font-weight: 500; }
 .cal-chart { position: relative; height: 220px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 0 0 2rem; margin-bottom: 0.4rem; }
 .cal-target-band { position: absolute; left: 2rem; right: 0; background: rgba(0,0,0,0.05); z-index: 0; }
 .cal-target-label { position: absolute; right: 4px; top: 2px; font-size: 0.65rem; color: #aaa; }
@@ -37,11 +41,12 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
 .cal-grid-label { position: absolute; left: -2rem; width: 2rem; padding-right: 5px; text-align: right; white-space: nowrap; transform: translateY(-50%); font-size: 10px; color: #bbb; font-weight: 500; }
 .cal-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 1; position: relative; }
 .cal-bar-wrapper { width: 60%; max-width: 36px; }
-.cal-bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.3s; opacity: 0.75; }
-.cal-bar-value { font-size: 10px; color: #bbb; margin-bottom: 2px; font-weight: 500; }
+.cal-bar { width: 100%; border-radius: 6px 6px 0 0; transition: height 0.3s; opacity: 0.75; }
+.cal-bar-value { font-size: 10px; color: #555; margin-bottom: 2px; font-weight: 500; }
 .cal-x-labels { display: flex; justify-content: space-between; padding: 0.3rem 0 0 2rem; }
 .cal-x-label { flex: 1; text-align: center; font-size: 0.75rem; color: #888; font-weight: 500; }
-.cal-average { text-align: center; font-size: 0.85rem; font-weight: 600; color: #333; padding-top: 0.6rem; }
+.cal-target-note { text-align: center; font-size: 0.72rem; color: #bbb; padding-top: 0.6rem; }
+.cal-average { text-align: center; font-size: 0.85rem; font-weight: 600; color: #333; padding-top: 0.15rem; }
 .cal-average .sub { font-weight: 400; font-size: 0.78rem; color: #888; display: block; margin-top: 0.15rem; }
 .macro-chart-section { margin-bottom: 4.5rem; }
 .macro-chart-section:first-of-type { margin-top: 1.5rem; }
@@ -66,13 +71,14 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
 .suggestions-divider { border: none; border-top: 1px solid #F3F4F6; margin: 0.6rem 0; }
 .achievement-list, .suggestion-list { padding-left: 1.2rem; font-size: 0.82rem; color: #444; }
 .achievement-list li, .suggestion-list li { margin-bottom: 0.3rem; }
-.week-nav { display: flex; justify-content: space-between; align-items: center; background: transparent; padding: 1rem 0 5rem; margin-top: 1rem; }
+.achievement-list li::marker { color: #D73C63; }
+.week-nav { display: flex; justify-content: space-between; align-items: center; background: transparent; padding: 1rem 0 1.6rem; margin-top: 1rem; }
 .week-nav-btn { display: inline-block; padding: 0.35rem 0.7rem; background: #D73C63; color: #fff; text-decoration: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; transition: background 0.2s; cursor: pointer; }
 .week-nav-btn:hover { background: #bf2e54; }
 .week-nav-btn.disabled { background: #ccc; color: #999; pointer-events: none; cursor: default; }
 .week-nav-current { font-size: 0.78rem; color: #666; font-weight: 500; }
-.report-footer { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid #F3F4F6; }
-.report-footer img { width: 32px; height: 32px; border-radius: 6px; }
+.report-footer { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; padding-top: 1.2rem; border-top: 1px solid #F3F4F6; }
+.report-footer img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 .report-footer .brand-name { font-family: 'Irish Grover', cursive; font-size: 1.1rem; color: #D73C63; margin: 0; }
 .report-disclaimer { text-align: center; font-size: 0.8rem; color: #aaa; margin-top: 0.5rem; }
 .loading { text-align: center; padding: 4rem 1rem; color: #888; font-size: 1rem; }
@@ -81,7 +87,7 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
 </head>
 <body>
 <div class="page" id="app">
-  <div class="loading" id="loading">Loading...</div>
+  <div class="loading" id="loading">__LOADING__</div>
   <div class="error" id="error" style="display:none;"></div>
   <div id="content" style="display:none;"></div>
 </div>
@@ -107,6 +113,8 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       mealBreakfast: '早餐',
       mealLunch: '午餐',
       mealDinner: '晚餐',
+      vsLastWeek: '较上周',
+      sameAsLastWeek: '与上周持平',
       calorieHeader: '热量分析',
       avgCal: '日均约 {avg} kcal',
       avgCalSimple: '日均 {avg} kcal',
@@ -124,13 +132,15 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       targetLabel: '目标 {min}–{max}',
       avgIntake: '平均摄入 {val}',
       highlightsHeader: '本周亮点 & 建议',
+      highlightsOnlyHeader: '本周亮点',
+      suggestionsOnlyHeader: '下周建议',
       highlights: '亮点',
       suggestions: '下周建议',
       defaultHighlight: '坚持记录就是最大的亮点 💪',
       defaultSuggestion: '继续保持，下周见 🐰',
       scrollHint: '← 左右滑动查看更多 →',
       planRate: '计划 −{rate}kg/周',
-      disclaimer: 'AI 营养师生成 · 仅供参考，如有医学饮食需求请咨询专业营养师',
+      disclaimer: '小犀牛AI营养师生成 · 仅供参考',
       weekdays: ['周一','周二','周三','周四','周五','周六','周日']
     },
     en: {
@@ -148,6 +158,8 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       mealBreakfast: 'Breakfast',
       mealLunch: 'Lunch',
       mealDinner: 'Dinner',
+      vsLastWeek: 'vs last week ',
+      sameAsLastWeek: 'same as last week',
       calorieHeader: 'Calorie Analysis',
       avgCal: 'Daily avg ~{avg} kcal',
       avgCalSimple: 'Daily avg {avg} kcal',
@@ -165,13 +177,15 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       targetLabel: 'Target {min}–{max}',
       avgIntake: 'Avg {val}',
       highlightsHeader: 'Highlights & Suggestions',
+      highlightsOnlyHeader: 'This Week',
+      suggestionsOnlyHeader: 'Next Week',
       highlights: 'Highlights',
       suggestions: 'Next Week',
       defaultHighlight: 'Showing up and logging is the biggest win 💪',
       defaultSuggestion: 'Keep going, see you next week 🐰',
       scrollHint: '← Scroll for more →',
       planRate: 'Plan −{rate}kg/wk',
-      disclaimer: 'AI-generated · For reference only. Consult a dietitian for medical needs.',
+      disclaimer: 'Generated by NanoRhino AI Nutritionist · For reference only',
       weekdays: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
     }
   };
@@ -232,6 +246,15 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
     var d = document.createElement('div');
     d.textContent = s;
     return d.innerHTML;
+  }
+
+  // 去掉文本里的 emoji(打卡记录 AI 评论不要 emoji),顺带清理多余空格
+  function stripEmoji(s) {
+    if (!s) return '';
+    return s
+      .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{1F1E6}-\u{1F1FF}]/gu, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   }
 
   function parseDate(s) {
@@ -310,10 +333,23 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
     });
 
     var allVals = vals.concat(planVals);
-    var yMinVal = Math.floor((Math.min.apply(null, allVals) - 0.5) * 2) / 2;
-    var yMaxVal = Math.ceil((Math.max.apply(null, allVals) + 0.5) * 2) / 2;
+    var rawMin = Math.min.apply(null, allVals) - 0.5;
+    var rawMax = Math.max.apply(null, allVals) + 0.5;
+    var rawRange = rawMax - rawMin;
+    if (rawRange < 1) rawRange = 1;
+    // 动态选步长:目标 tick 数 ≤ 6。候选从小到大,取第一个满足条件的。
+    var stepCandidates = [0.5, 1, 2, 2.5, 5, 10];
+    var yStep = 1;
+    for (var sc = 0; sc < stepCandidates.length; sc++) {
+      if (Math.ceil(rawRange / stepCandidates[sc]) + 1 <= 6) { yStep = stepCandidates[sc]; break; }
+    }
+    // 把边界对齐到 yStep 的整数倍(避免起点是奇怪的 62.7 之类)
+    var yMinVal = Math.floor(rawMin / yStep) * yStep;
+    var yMaxVal = Math.ceil(rawMax / yStep) * yStep;
     var yRange = yMaxVal - yMinVal;
-    if (yRange < 1) { yRange = 1; yMaxVal = yMinVal + 1; }
+    if (yRange < yStep) { yRange = yStep; yMaxVal = yMinVal + yStep; }
+    var yTicks = [];
+    for (var yv = yMinVal; yv <= yMaxVal + 0.01; yv += yStep) yTicks.push(yv);
 
     var chartTop = 20, chartBottom = 150, chartHeight = chartBottom - chartTop;
     function valToY(v) { return Math.round(chartBottom - ((v - yMinVal) / yRange) * chartHeight); }
@@ -323,10 +359,6 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
 
     var actualPath = catmullRomPath(actualPts);
     var planPathD = catmullRomPath(planPts);
-
-    var yStep = yRange <= 3 ? 0.5 : 1.0;
-    var yTicks = [];
-    for (var yv = yMinVal; yv <= yMaxVal + 0.01; yv += yStep) yTicks.push(yv);
 
     // Y-axis
     var yAxisH = '<div class="weight-y-axis">\n';
@@ -387,14 +419,18 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       var sign = change > 0 ? '+' : '';
       html += '<div class="weight-change ' + cls + '">' + t('thisWeekChange', {sign: sign, change: change.toFixed(1), from: weightReadings[0].value, to: weightReadings[weightReadings.length-1].value}) + '</div>\n';
     } else if (weightReadings.length === 1) {
-      html += '<div class="weight-change same">' + t('thisWeekSingle', {val: weightReadings[0].value}) + '</div>\n';
+      html += '<div class="weight-change">' + t('thisWeekSingle', {val: weightReadings[0].value}) + '</div>\n';
     }
     return html;
   }
 
   // ─── Chart: Macro bars ──────────────────────────────────────────────
-  function renderMacroChart(name, dailyValues, targetLow, targetHigh, chartH) {
+  function renderMacroChart(name, dailyValues, targetLow, targetHigh, chartH, palette) {
     chartH = chartH || 160;
+    // palette: { high:{c,o}, mid:{c,o}, low:{c,o} } — 高于/区间内/低于目标三档,c=色 o=不透明度
+    palette = palette || {
+      high: { c: '#6bcb8b', o: 0.95 }, mid: { c: '#6bcb8b', o: 0.85 }, low: { c: '#6bcb8b', o: 0.65 },
+    };
     var weekdays = t('weekdays');
     var nonNull = dailyValues.filter(function(v) { return v !== null && v > 0; });
     if (!nonNull.length) return '';
@@ -414,10 +450,10 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
     var tHighPct = (targetHigh / chartMax) * 100;
     var avgPct = (avgVal / chartMax) * 100;
 
-    function barColor(val) {
-      if (val < targetLow) return '#c8e6c9';
-      if (val > targetHigh) return '#fdd0b1';
-      return '#6bcb8b';
+    // 按与目标区间的关系分三档:高于上限 / 区间内 / 低于下限(同色系不同深浅)
+    function barStyle(val) {
+      var p = val > targetHigh ? palette.high : (val < targetLow ? palette.low : palette.mid);
+      return 'background:' + p.c + ';opacity:' + p.o + ';';
     }
 
     var h = '<div class="macro-chart-section">\n';
@@ -442,7 +478,7 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       } else {
         var rounded = Math.round(val);
         var bH = Math.min(Math.round((val / chartMax) * chartH), Math.round(chartH * 0.85));
-        h += '<div class="cal-bar-col"><div class="cal-bar-value">' + rounded + '</div><div class="cal-bar-wrapper"><div class="cal-bar" style="height:' + bH + 'px;background:' + barColor(val) + ';"></div></div></div>\n';
+        h += '<div class="cal-bar-col"><div class="cal-bar-value">' + rounded + '</div><div class="cal-bar-wrapper"><div class="cal-bar" style="height:' + bH + 'px;' + barStyle(val) + '"></div></div></div>\n';
       }
     }
     h += '</div>\n<div class="cal-x-labels">';
@@ -486,7 +522,8 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
 
     // Header
     h += '<header class="report-header">';
-    h += '<h1>' + t('title', {N: weekNum}) + '</h1>';
+    // 标题里的周数用粉色 span 包起来,其余黑色
+    h += '<h1>' + t('title', {N: '<span class="wk-num">' + weekNum + '</span>'}) + '</h1>';
     var sub = '';
     if (nickname && tagline) sub = esc(nickname) + ' · ' + esc(tagline);
     else if (nickname) sub = esc(nickname);
@@ -503,7 +540,7 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       h += '<div style="font-size:0.95rem;color:#666;">' + t('noData') + '</div>';
       h += '<div style="font-size:0.82rem;color:#aaa;margin-top:0.3rem;">' + t('noDataHint') + '</div>';
       h += '</div></div>';
-      h += '<div class="report-footer"><img src="https://nanorhino.ai/assets/logo.png" alt="NanoRhino"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
+      h += '<div class="report-footer"><img src="https://nanorhino-openclaw-user-dashboard.chatlingxi.com/logo-sm.png" alt="小犀牛"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
       // Nav 挪到最后
       h += '<nav class="week-nav">';
       h += '<a class="week-nav-btn week-nav-prev' + prevDisabled + '" data-week="' + prevStart + '">' + t('prevWeek') + '</a>';
@@ -525,6 +562,17 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       }
       return;
     }
+
+    // Section 0: 本周亮点(第一张卡,淡粉渐变)
+    h += '<div class="report-card highlight-card"><div class="card-header">' + t('highlightsOnlyHeader') + '</div><div class="card-body">';
+    if (highlights.length) {
+      h += '<ul class="achievement-list">';
+      for (var hi0 = 0; hi0 < highlights.length; hi0++) h += '<li>' + esc(highlights[hi0]) + '</li>';
+      h += '</ul>';
+    } else {
+      h += '<ul class="achievement-list"><li>' + t('defaultHighlight') + '</li></ul>';
+    }
+    h += '</div></div>';
 
     // Section 1: Logging Calendar
     h += '<div class="report-card"><div class="card-header">' + t('loggingHeader') + '</div><div class="card-body">';
@@ -563,18 +611,31 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       if (dMeals.indexOf('dinner') !== -1) tallyMap.dinner++;
     }
     var labelMap = { breakfast: t('mealBreakfast'), lunch: t('mealLunch'), dinner: t('mealDinner') };
+    var prevFreq = data.prev_meal_freq || {};
     var tallyHtml = '';
     for (var ti = 0; ti < activeTypes.length; ti++) {
       var mt = activeTypes[ti];
+      // 较上周差值:本周命中 - 上周命中(有上周数据才显示)
+      var deltaHtml = '';
+      if (data.prev_meal_freq && typeof prevFreq[mt] === 'number') {
+        var diff = tallyMap[mt] - prevFreq[mt];
+        if (diff === 0) {
+          deltaHtml = '<span class="tally-delta">' + t('sameAsLastWeek') + '</span>';
+        } else {
+          var sign = diff > 0 ? '+' : '−';
+          var arrow = diff > 0 ? ' ↑' : ' ↓';
+          deltaHtml = '<span class="tally-delta">' + t('vsLastWeek') + sign + Math.abs(diff) + arrow + '</span>';
+        }
+      }
       tallyHtml += '<div class="tally-item">' +
-        '<span class="tally-dot"></span>' +
-        '<span class="tally-num">' + tallyMap[mt] + '<span class="denom">/' + days.length + '</span></span>' +
-        '<span class="tally-label">' + labelMap[mt] + '</span>' +
+        '<span class="tally-mealname">' + labelMap[mt] + '</span>' +
+        '<span class="tally-num"><span class="cur">' + tallyMap[mt] + '</span><span class="denom">/' + days.length + '</span></span>' +
+        deltaHtml +
       '</div>';
     }
     h += '<div class="meal-tally">' + tallyHtml + '</div>';
     h += '</div>';
-    if (commentary.logging) h += '<div class="card-commentary">' + esc(commentary.logging) + '</div>';
+    if (commentary.logging) h += '<div class="card-commentary">' + esc(stripEmoji(commentary.logging)) + '</div>';
     h += '</div>';
 
     // Section 2: Calorie Analysis
@@ -589,9 +650,10 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
     var loggedCals = days.filter(function(d) { return d.logged; }).map(function(d) { return d.totals.cal; });
     var chartMax = summary.chart_max || Math.max(Math.max.apply(null, loggedCals.length ? loggedCals : [0]), calMaxTarget * 1.2);
 
-    h += '<div class="report-card"><div class="card-header">' + t('calorieHeader') + '</div><div class="card-body">';
+    h += '<div class="report-card"><div class="card-header">' + t('calorieHeader') + '</div><div class="card-body cal-body">';
     h += renderCalorieChart(days, calMin, calMaxTarget, chartMax);
-    h += '<div class="cal-average">' + t('avgCalSimple', {avg: summary.cal_avg}) + ' <span class="sub">（' + t('avgCalTarget', {min: calMin, max: calMaxTarget}) + '）</span></div>';
+    h += '<div class="cal-target-note">' + t('avgCalTarget', {min: calMin, max: calMaxTarget}) + '</div>';
+    h += '<div class="cal-average">' + t('avgCalSimple', {avg: summary.cal_avg}) + '</div>';
     h += '</div>';
     if (commentary.calories) h += '<div class="card-commentary">' + esc(commentary.calories) + '</div>';
     h += '</div>';
@@ -617,12 +679,16 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
     var hasAnyMacro = proteinVals.concat(fatVals, carbVals).some(function(v) { return v; });
     if (hasAnyMacro) {
       var macroH = '';
-      if (carbVals.some(function(v) { return v; })) macroH += renderMacroChart(t('carbs'), carbVals, carbRange[0], carbRange[1]);
-      if (proteinVals.some(function(v) { return v; })) macroH += renderMacroChart(t('protein'), proteinVals, proteinRange[0], proteinRange[1]);
-      if (fatVals.some(function(v) { return v; })) macroH += renderMacroChart(t('fat'), fatVals, fatRange[0], fatRange[1]);
+      // 三档色(高于上限/区间内/低于下限),不透明度 95%/85%/65%
+      var CARB_PAL = { high: { c: '#FEBD1B', o: 0.95 }, mid: { c: '#FFC945', o: 0.85 }, low: { c: '#FFDD89', o: 0.65 } };
+      var PROTEIN_PAL = { high: { c: '#8015D9', o: 0.95 }, mid: { c: '#963DE0', o: 0.85 }, low: { c: '#D7B1F7', o: 0.65 } };
+      var FAT_PAL = { high: { c: '#2195FF', o: 0.95 }, mid: { c: '#4FA8F9', o: 0.85 }, low: { c: '#5EA9EE', o: 0.65 } };
+      if (carbVals.some(function(v) { return v; })) macroH += renderMacroChart(t('carbs'), carbVals, carbRange[0], carbRange[1], undefined, CARB_PAL);
+      if (proteinVals.some(function(v) { return v; })) macroH += renderMacroChart(t('protein'), proteinVals, proteinRange[0], proteinRange[1], undefined, PROTEIN_PAL);
+      if (fatVals.some(function(v) { return v; })) macroH += renderMacroChart(t('fat'), fatVals, fatRange[0], fatRange[1], undefined, FAT_PAL);
 
       if (summary.macro_estimated) {
-        macroH += '<p style="font-size:0.82rem;color:#888;margin-top:0.5rem;">' + t('macroEstNote') + '</p>';
+        macroH += '<p style="text-align:center;font-size:0.72rem;color:#bbb;margin-top:0.5rem;">' + t('macroEstNote') + '</p>';
       }
 
       h += '<div class="report-card"><div class="card-header">' + t('macroHeader') + '</div><div class="card-body">';
@@ -632,33 +698,26 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
       h += '</div>';
     }
 
-    // Section 5: Highlights & Suggestions (always show — fallback if empty)
-    h += '<div class="report-card"><div class="card-header">' + t('highlightsHeader') + '</div><div class="card-body">';
-    if (highlights.length) {
-      h += '<div class="section-subtitle">' + t('highlights') + '</div><ul class="achievement-list">';
-      for (var hi = 0; hi < highlights.length; hi++) h += '<li>' + esc(highlights[hi]) + '</li>';
-      h += '</ul>';
-    } else {
-      h += '<div class="section-subtitle">' + t('highlights') + '</div><ul class="achievement-list"><li>' + t('defaultHighlight') + '</li></ul>';
-    }
-    h += '<hr class="suggestions-divider">';
+    // Section 5: 下周建议(最后一张卡)
+    h += '<div class="report-card"><div class="card-header">' + t('suggestionsOnlyHeader') + '</div><div class="card-body">';
     if (suggestions.length) {
-      h += '<div class="section-subtitle">' + t('suggestions') + '</div><ul class="suggestion-list">';
-      for (var si = 0; si < suggestions.length; si++) h += '<li>' + esc(suggestions[si]) + '</li>';
+      h += '<ul class="suggestion-list">';
+      for (var si5 = 0; si5 < suggestions.length; si5++) h += '<li>' + esc(suggestions[si5]) + '</li>';
       h += '</ul>';
     } else {
-      h += '<div class="section-subtitle">' + t('suggestions') + '</div><ul class="suggestion-list"><li>' + t('defaultSuggestion') + '</li></ul>';
+      h += '<ul class="suggestion-list"><li>' + t('defaultSuggestion') + '</li></ul>';
     }
     h += '</div></div>';
 
-    // Footer
-    h += '<div class="report-footer"><img src="https://nanorhino.ai/assets/logo.png" alt="NanoRhino"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
-    // Nav 挪到最后
+    // Nav:紧跟"下周建议"卡片后面
     h += '<nav class="week-nav">';
     h += '<a class="week-nav-btn week-nav-prev' + prevDisabled + '" data-week="' + prevStart + '">' + t('prevWeek') + '</a>';
     h += '<span class="week-nav-current">' + t('weekLabel', {N: weekNum}) + '</span>';
     h += '<a class="week-nav-btn week-nav-next' + nextDisabled + '" data-week="' + nextStart + '">' + t('nextWeek') + '</a>';
     h += '</nav>';
+
+    // Footer
+    h += '<div class="report-footer"><img src="https://nanorhino-openclaw-user-dashboard.chatlingxi.com/logo-sm.png" alt="小犀牛"><span class="brand-name">NanoRhino</span></div><div class="report-disclaimer">' + t('disclaimer') + '</div>';
 
     document.getElementById('content').innerHTML = h;
     document.getElementById('content').style.display = '';
@@ -733,6 +792,6 @@ body { font-family: 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC',
             background:rgba(215,60,99,0.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
             color:#fff;padding:11px 26px;border-radius:24px;font-size:15px;font-weight:600;
             box-shadow:0 3px 12px rgba(215,60,99,0.28);z-index:9999;cursor:pointer;
-            -webkit-tap-highlight-color:transparent">← 返回数据中心</div>
+            -webkit-tap-highlight-color:transparent">← 返回减脂档案</div>
 </body>
 </html>

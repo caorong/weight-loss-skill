@@ -9,7 +9,7 @@ description: generate personalized weekly progress reports for Nano Rhino users.
 
 > ⚠️ **SILENT OPERATION:** Never narrate internal actions to the user. Just do it and respond with the result.
 
-> 🚨 **ALL reports use template+data separation. `generate-report-html.py` outputs JSON data. The HTML template renders client-side. WRITING HTML YOURSELF IS FORBIDDEN.**
+> 🚨 **ALL reports are data-only. `generate-report-html.py` produces a JSON payload and PUTs it to data-api (MySQL `weekly_reports`). Dashboard reads DB, SSR-injects, and Vue SPA renders it. WRITING HTML YOURSELF IS FORBIDDEN.**
 
 ---
 
@@ -79,7 +79,7 @@ All calorie/macro targets, weight loss rate, phase, progress bar, and week numbe
 ```bash
 cat /tmp/weekly-data-{username}.json | \
 python3 {baseDir}/scripts/generate-report-html.py \
-  --output {workspaceDir}/data/reports/weekly-data-{start_date}.html \
+  --output {workspaceDir}/data/reports/weekly-data-{start_date}.json \
   --workspace-dir {workspaceDir} \
   --nickname {user_nickname} \
   --tagline '{short fun summary of the week}' \
@@ -92,11 +92,12 @@ python3 {baseDir}/scripts/generate-report-html.py \
 **Script stdout = report URL.** Capture it.
 
 **What the script does automatically:**
-1. Generates JSON data file
-2. Copies latest + template to reports dir
-3. Uploads 3 files to cloud storage
+1. Merges commentary/highlights/suggestions into the JSON payload
+2. Writes local JSON copy (for audit + prior-week self-read)
+3. **PUTs payload to data-api** (`/v1/dashboard/user/{account_id}/weekly`) —
+   dashboard reads straight from MySQL `weekly_reports`, no S3 upload.
 4. Writes report log
-5. Outputs public URL
+5. Outputs dashboard card-entry URL
 
 **What YOU provide:**
 
@@ -115,9 +116,25 @@ python3 {baseDir}/scripts/generate-report-html.py \
 For section-by-section rules: `read references/report-sections.md`
 For edge cases (zero data, no plan, ED flags): `read references/edge-cases.md`
 
-### Step 6: Compose Chat Message
+### Step 6: Send Mini-Program Card
 
-Use values directly from collect output (`meta.*`):
+周报**只发小程序卡片**(封面=「本周成长报告」信封图,点击进小程序内周报页)。
+**不再发任何引导文字** —— 卡片本身已承载标题和跳转。
+
+卡片点开走 `--target=weekly` → 小程序 loading → dashboard `/api/weekly?token=` →
+读 MySQL `weekly_reports`(Step 5 已 PUT 进去)→ SSR-inject → Vue `Weekly.vue` 渲染。
+即:发送走卡片(本步),内容走 DB 动态渲染(Step 5 写的 DB)。
+
+```bash
+bash {baseDir}/scripts/send-weekly-card.sh {account_id}
+```
+
+- `{account_id}` = workspace 目录名里的 accountId(如 `workspace-wechat-dm-acckyoy8...` → `acckyoy8...`)
+- 脚本自动从 registry 反查 robotId,发 `--target=weekly` 卡片
+- 输出 `ok` = 成功 → **本轮结束,回复 `NO_REPLY`,不再发任何文字**
+- 非 0 退出 = 卡片发送失败 → **仅此时**回退到发一条文字 + 链接(见下方"回退文案"),保证用户至少收到周报
+
+**回退文案(仅卡片发送失败时才用):** `{report_url}` = Step 5 脚本输出的 dashboard 卡片入口 URL(`/api/weekly?week=...`,读 DB 渲染),不是老 S3 链接。
 
 ```
 📊 第{meta.week_number}周周报
@@ -157,19 +174,22 @@ For style examples: `read references/hook-examples.md`
 
 ## Report URLs
 
-- `https://nanorhino.ai/user/{username}/weekly-report.html?week={start_date}`
-- Latest: `https://nanorhino.ai/user/{username}/weekly-report.html` (no ?week= → loads latest)
+- Card-entry: `https://<dashboard-domain>/api/weekly?week={start_date}` (bare, no token)
+- Notification-composer / cron adds `&token=<JWT>` when embedding into the message.
+- Dashboard reads DB, SSR-injects the payload, and hands off to Vue SPA. No S3.
 
-Username auto-resolved from workspace path. Do NOT pass `--username` manually.
+`account_id` is auto-derived from the workspace directory name (`workspace-wechat-dm-{accountId}`).
+`DATA_API_URL` env override supports test / local dev (default `http://127.0.0.1:3100`).
 
 ---
 
 ## Writes
 
-| Path | When |
-|------|------|
-| `data/reports/weekly-data-{start_date}.html` | JSON data file |
+| Target | When |
+|--------|------|
+| `data/reports/weekly-data-{start_date}.json` | Local JSON copy (audit + prior-week reference) |
 | `data/logs/weekly-report-{start_date}.json` | Report log (auto by script) |
+| MySQL `weekly_reports` (via data-api PUT) | Server-of-record — dashboard reads from here |
 
 ---
 
