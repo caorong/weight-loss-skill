@@ -31,7 +31,9 @@ description: generate personalized weekly progress reports for Nano Rhino users.
 python3 {diet-tracking-analysis:baseDir}/scripts/nutrition-calc.py local-date --tz-offset {tz_offset}
 ```
 
-Use `current_week` (monday–sunday) as report range. **Never calculate dates yourself.**
+**报告范围 = `current_week`（本周 monday–sunday），永远用本周。** Never calculate dates yourself.
+
+> 🔒 **只用 `current_week`,绝不用 `previous_week`。** 即使今天本周还没过完(如周三/周五触发),也报本周至今的数据——**不要**因为"本周不完整"就改用上周。`previous_week` 字段仅供参考,本 skill 永不使用它。周日 cron 触发时本周刚好完整;平时触发就报本周进行中的数据。Step 3 的 `{monday}`/`{sunday}` 必须取 `current_week` 的值。
 
 ### Step 2: Gate Check (cron only)
 
