@@ -95,7 +95,7 @@ when conflicts arise.
 | **P1 — Emotional** | `emotional-support` (Categories 1-4, 6-9) | Emotional presence takes priority over data collection. |
 | **P2 — Data Logging** | `diet-tracking-analysis`, `exercise-tracking` | Recording what the user did. |
 | **P3 — Planning** | `weight-loss-planner`, `meal-planner`, `restaurant-meal-finder`, `exercise-planning`, `habit-builder` | Designing programs and plans. |
-| **P4 — Reporting** | `weekly-report`, `notification-manager`, `notification-composer` | Summaries and proactive outreach. |
+| **P4 — Reporting** | `weekly-report`, `diet-profile-card`, `notification-manager`, `notification-composer` | Summaries and proactive outreach. |
 | **P5 — Onboarding** | `user-onboarding-profile` | Profile building (only at start). |
 
 **Rule:** When two skills from different tiers conflict, the higher-priority
@@ -163,6 +163,10 @@ I just said?"
 | "我喝水很少" / "I don't eat breakfast" | behavior-self-report | habit-builder |
 | "我吃饭太快了" / "I snack too much at night" | behavior-self-report | habit-builder |
 | "我想养成早睡的习惯" | habit-request | habit-builder |
+| "看看我的减脂档案" / "my profile" | profile-card-request | diet-profile-card |
+| "给我看看我的减脂曲线 / 我的数据" | profile-card-request | diet-profile-card |
+| "今天吃了多少" / "今日进度" | daily-data-query | personal-data-query |
+| "这周怎么样 / 周报" | weekly-report-request | weekly-report |
 
 ---
 
