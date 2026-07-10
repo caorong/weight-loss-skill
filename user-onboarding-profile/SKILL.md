@@ -144,7 +144,7 @@ python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py bmi \
   --weight <target_kg> --height <cm> [--standard who|asian]
 ```
 
-自然地结合减重差额呈现结果，例："从 80kg 到 65kg（要减 15kg）——你的 BMI 会从 27.8（偏胖）→ 22.5（正常范围）。"
+自然地结合减重差额呈现结果，例："从 80kg 到 65kg（要减 15kg）——你的 BMI 会从 27.8 → 22.5（正常范围），这是一个很健康的变化。"
 
 **BMI 标准选择：** 用户所在地区或语言为中文、日文、韩文时使用亚洲标准（`--standard asian`）；其他情况使用 WHO 标准（`--standard who`）。
 
