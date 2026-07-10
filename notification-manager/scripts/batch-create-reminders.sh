@@ -130,13 +130,26 @@ get_timezone() {
 
 get_meal_schedule() {
   local in_section=false
+  # 兼容 onboarding 写的两种 Meal Schedule 格式:
+  #   A) 同行加粗:  - **Breakfast:** 08:00
+  #   B) Schedule 子项(可缩进):  - **Schedule:** 下的  - Lunch: 12:00 / - Dinner: 19:00
+  # 只认真实餐次名(Breakfast/Lunch/Brunch/Dinner/Supper);Meals per Day/Schedule/
+  # Snack/Note 等非"正餐时间"行一律跳过(避免"下午加餐(骑车前)"这类描述当时间解析失败)。
+  # 时间值交给 extract_time 抽首个 HH:MM(能容忍 ~8:00 / 11:00–12:00 区间 / 带注释)。
+  local meal_re='^(Breakfast|Lunch|Brunch|Dinner|Supper)$'
   while IFS= read -r line; do
     [[ "$line" == "## Meal Schedule" ]] && in_section=true && continue
     if [[ "$in_section" == true ]]; then
       [[ "$line" =~ ^##\  ]] && break
-      if [[ "$line" =~ ^-\ \*\*([^*]+):\*\*\ (.+)$ ]]; then
-        local meal="${BASH_REMATCH[1]}" time="${BASH_REMATCH[2]}"
-        [[ "$meal" != "Meals per Day" && "$time" != "—" && -n "$time" ]] && echo "$meal $time"
+      local meal="" time=""
+      if [[ "$line" =~ ^-\ \*\*([^*]+):\*\*\ (.+)$ ]]; then           # A) - **Meal:** time
+        meal="${BASH_REMATCH[1]}"; time="${BASH_REMATCH[2]}"
+      elif [[ "$line" =~ ^[[:space:]]*-\ ([A-Za-z]+):\ *(.+)$ ]]; then  # B) 缩进子项  - Meal: time
+        meal="${BASH_REMATCH[1]}"; time="${BASH_REMATCH[2]}"
+      fi
+      if [[ -n "$meal" && "$meal" =~ $meal_re ]]; then
+        local t; t=$(extract_time "$time")
+        [[ -n "$t" ]] && echo "$meal $t"
       fi
     fi
   done < "$HEALTH_PROFILE"
