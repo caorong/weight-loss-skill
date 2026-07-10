@@ -23,6 +23,51 @@ Format result per the response schema below.
 
 ---
 
+## First-Time Mini-Program Guidance (append once)
+
+The **first time** a user asks for a daily summary, after the data block tell
+them their data is viewable in the mini-program and offer a daily auto-send.
+Show this **exactly once per user**, then never again.
+
+**Check first** — read `{workspaceDir}/data/engagement.json` and look at
+`activation.daily_summary_prompted`:
+- If it's `true` → this user was already prompted. Just return the data block. **Skip everything below.**
+- If missing/`false` → this is the first daily-summary ask. Do the steps below.
+
+**Steps (first time only):**
+
+1. Return the normal data block (per the schema below).
+2. Append the guidance (language per `USER.md > Language`, zh default):
+
+   > 💡 这些数据在小程序里随时能看哦～点开卡片就能查。
+   > 要不要我**每天定时**给你发一次？这样不用主动问也能看到当天的进度 🙌
+
+   (en: "💡 You can check this anytime in the mini-program — just tap the card. Want me to send it to you automatically every day, so you can see your progress without asking? 🙌")
+3. **Mark as prompted** (deterministic, atomic — do NOT hand-edit the JSON):
+   ```bash
+   python3 {notification-manager:baseDir}/scripts/activation-mark-sent.py \
+     --workspace-dir {workspaceDir} --flag daily_summary_prompted
+   ```
+
+**When the user says yes to the daily send:**
+
+Ask what time they'd like it (don't assume a default), then create a per-user
+daily cron that sends the mini-program card. Use the notification-manager
+wrapper (never call `openclaw cron add` directly):
+
+```bash
+bash {notification-manager:baseDir}/scripts/create-reminder.sh \
+  --agent {agentId} --name "[custom] 每日数据卡片" \
+  --cron "0 {hour} * * *" \
+  --message "先执行 python3 {notification-composer:baseDir}/scripts/pre-send-check.py --workspace-dir {workspaceDir} --meal-type custom --tz-offset {tz_offset}。如果输出 NO_REPLY，直接回复 NO_REPLY，什么都不做。否则执行:发一张 dashboard 小程序卡片(点开进小程序看当日数据)——bash {diet-profile-card:baseDir}/scripts/send-profile-card.sh {account_id} \"今天的数据我给你送来啦,点开看看进度 👇\"。发卡成功回 NO_REPLY;失败才回退到一条文字。User workspace: {workspaceDir}"
+```
+
+- `{hour}` = user's chosen local hour; channel/timezone/anti-burst are auto-resolved by the wrapper.
+- The card opens the mini-program **dashboard home**, which already shows today's calories/progress — no separate daily page needed.
+- Confirm to the user it's set (e.g. "好啦～以后每天 {time} 给你发 📬").
+
+---
+
 ## Response Schema
 
 📊 今日摄入：
