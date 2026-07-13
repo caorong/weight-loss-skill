@@ -203,9 +203,15 @@ def adjust_cron_expr(original_expr: str, new_hour: int, new_minute: int) -> str:
 
 
 def _window_for_type(job_type: str) -> tuple[int, int]:
+    # meal/weight 时间敏感(用户按点吃饭/称重),只在 ±小窗内挪。
     if job_type in ("meal", "weight"):
         return 10, 5
-    return 10, 0
+    # tips/other(Product tips / Diet pattern / Weekly report)非时间敏感,可大幅后移。
+    # 之前是 (10, 0):只能往整点前 10 分钟挪。但整点前 10 分钟早被历史 rebalance
+    # 填满(每分钟顶 MAX_PER_MINUTE),整点本身也堆满 → 新用户全部 fallback 回原始
+    # 整点(如 0 21),导致 21:00 堆积几十个。放开往后 30 分钟,让它们落进整点后的
+    # 空档(如 21:01-21:30),从建号时就散开,不再挤整点。
+    return 10, 30
 
 
 def _allocate_one(cron: str, tz: str, job_type: str, counts: dict[int, int]) -> tuple[str, int]:
