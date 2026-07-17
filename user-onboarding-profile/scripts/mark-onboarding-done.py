@@ -205,9 +205,12 @@ def _update_updated_header(content: str, iso_ts: str) -> str:
     return content
 
 
-_SEND_CARD = (
-    "/home/nanorhino/backend-service/.openclaw-gateway/extensions/"
-    "wechat/miniprogram-card/send-fixed-card.mjs"
+# 业务侧统一发卡入口(见 card-send-refactor:系统/业务拆分)。取代旧的直接
+# node send-fixed-card.mjs —— 现在业务层负责读 USER.md/填标题/选模板,系统层
+# (backend send-miniprogram-card.mjs)只做渲染发送。
+_BUILD_SEND_CARD = (
+    "/home/nanorhino/backend-service/.openclaw-user-service/"
+    "skills/shared/card/build-and-send-card.sh"
 )
 
 _CREATE_REMINDER = (
@@ -267,14 +270,19 @@ def _schedule_d7_mpcard_cron(workspace: str, now: datetime) -> str:
 
         try:
             _um = (Path(workspace) / "USER.md").read_text(encoding="utf-8")
-            _m = re.search(r"^\s*-\s*\*\*Name:\*\*\s*(.+?)\s*$", _um, re.MULTILINE | re.IGNORECASE)
+            # 值捕获 [^\n*][^\n]*? : Name 为空时不误抓下一行的 `- **What to call them:**`
+            # 标签(见 user-md-name-parse-bug);解析不到则兜底 "你"。
+            _m = re.search(
+                r"^[ \t]*-?[ \t]*\*\*Name:\*\*[ \t]*([^\n*][^\n]*?)[ \t]*$",
+                _um, re.MULTILINE | re.IGNORECASE,
+            )
             _uname = _m.group(1).strip() if (_m and _m.group(1).strip()) else "你"
         except Exception:
             _uname = "你"
 
         message = (
             "First run this exec command: "
-            f"node {_SEND_CARD} {robot_id} {account_id}\n"
+            f"bash {_BUILD_SEND_CARD} --account {account_id} --kind profile\n"
             "Then reply with EXACTLY this text and nothing else:\n"
             f"{_uname}！🎉 偷偷数了下，你已经坚持记录整整一周啦～太可以了吧！\n"
             "这几天你吃了啥、体重怎么变的，我可全都给你存进专属减脂档案里咯 📒✨\n"
