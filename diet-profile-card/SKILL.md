@@ -41,7 +41,7 @@ metadata:
 
 ### Step 2: 写一句当下语境的短文案
 
-`send-fixed-card.mjs` 会连着发一条文字 + 一张卡。**必须显式传一句贴合当下对话的短文案**(不传则脚本用它内置的"坚持记录整整一周"D7 文案,不适合自然语言场景)。
+发卡时可**附带一句贴合当下对话的短文案**,连着卡一起发。**不传文案则只发卡片、不发文字**(无任何兜底文案)——自然语言场景建议显式传一句,让回复更自然。
 
 文案要求:1-2 句,口语、轻松,承接用户刚才的话,引导点开卡片看档案。用 `USER.md > Name` 称呼。示例:
 - "来啦～你的减脂档案都在这张卡里,点开看看这段时间的变化 👇"
@@ -55,7 +55,7 @@ metadata:
 bash {baseDir}/scripts/send-profile-card.sh {account_id} "{Step2 的短文案}"
 ```
 
-- 脚本自动从 registry 反查 robotId、从网关进程取密钥,底层调 `send-fixed-card.mjs`
+- 脚本转调业务统一入口 `shared/card/build-and-send-card.sh`(反查 robotId、取密钥、生成封面 SVG),底层由 backend `send-miniprogram-card.mjs` 渲染发送
 - 输出 `ok` = 成功 → **本轮结束,回复 `NO_REPLY`,不再发任何文字**
 - 非 0 退出 = 发送失败 → **仅此时**回退到一条文字(见下),保证用户有回应
 
