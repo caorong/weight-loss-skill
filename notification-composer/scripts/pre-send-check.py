@@ -106,7 +106,7 @@ def check_health_profile(workspace_dir):
     return True, None
 
 
-def check_engagement_stage(workspace_dir, meal_type, tz_offset, out=None):
+def check_engagement_stage(workspace_dir, meal_type, tz_offset, out=None, no_claim=False):
     """Check 2: engagement stage gating.
 
     Stage 1 (ACTIVE):  SEND — normal reminder
@@ -121,6 +121,10 @@ def check_engagement_stage(workspace_dir, meal_type, tz_offset, out=None):
     Stage from lifecycle API /state (single source of truth). Recall cadence +
     same-day dedup from /due (event-sourced). On SEND-recall, claims the slot by
     POST /recall-sent immediately (check-time claim, replaces old last_recall_date).
+
+    no_claim=True (--no-claim): 判定照常,但**跳过** /recall-sent 认领。给
+    cron-gate hook 层预判用 —— /recall-sent 不幂等,hook 预判 + agent 内 SKILL
+    双跑会重复认领污染 stage 计数。真正的认领留给 agent 那次调用。
     """
     account_id = _account_id(workspace_dir)
     state = lifecycle_state(account_id)
@@ -185,7 +189,11 @@ def check_engagement_stage(workspace_dir, meal_type, tz_offset, out=None):
         if not is_due:
             return False, f"stage={stage} — not due for recall today (cadence/dedup)"
         # 检查时认领:立即记 recall_sent,防同 slot 重触发重复发(复刻旧 last_recall_date 语义)
-        lifecycle_mark_recall(account_id, tier or ("weekly" if stage in (2, 3) else "monthly"))
+        # --no-claim(hook 预判)时跳过:认领留给 agent 内那次真正 compose 的调用
+        if no_claim:
+            log(f"no-claim mode: skip /recall-sent for {account_id} (stage={stage})")
+        else:
+            lifecycle_mark_recall(account_id, tier or ("weekly" if stage in (2, 3) else "monthly"))
         if stage == 2:
             return True, f"recall stage=2 days_silent={days_silent_val}"
         return True, None
@@ -629,6 +637,9 @@ def main():
                         help="Timezone offset in seconds from UTC")
     parser.add_argument("--mock-date", default=None,
                         help="Mock today's date YYYY-MM-DD (for testing)")
+    parser.add_argument("--no-claim", action="store_true",
+                        help="Read-only mode: run all checks but never POST /recall-sent. "
+                             "For cron-gate hook pre-checks; the agent's own call claims.")
     args = parser.parse_args()
     args.workspace_dir = _normalize_path(args.workspace_dir)
 
@@ -640,7 +651,8 @@ def main():
         ("leave", lambda: check_leave(args.workspace_dir, args.tz_offset, args.mock_date)),
         ("health_profile", lambda: check_health_profile(args.workspace_dir)),
         ("engagement_stage", lambda: check_engagement_stage(
-            args.workspace_dir, args.meal_type, args.tz_offset, out=stage_info)),
+            args.workspace_dir, args.meal_type, args.tz_offset, out=stage_info,
+            no_claim=args.no_claim)),
         ("health_flags", lambda: check_health_flags(args.workspace_dir, args.meal_type)),
         ("scheduling", lambda: check_scheduling_constraints(
             args.workspace_dir, args.meal_type, args.tz_offset)),
