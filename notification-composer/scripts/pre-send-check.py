@@ -624,6 +624,51 @@ def check_leave(workspace_dir, tz_offset, mock_date=None):
 
 
 
+def recent_conversation_block(workspace_dir):
+    """抽取用户最近对话, 供 cron 提醒承接上下文。
+
+    默认关闭 (环境变量 CRON_RECENT_CONTEXT 未开启时返回空), 灰度期在测试服/生产
+    按需打开。走 data-api 的 /v1/conversation/recent 端点 (数据源是 chat-logger
+    的 messages 表 = reply-filter 投递后的干净文本, 非带内部推理的 transcript)。
+    任何失败都静默返回空——绝不因抽取问题阻断提醒。
+
+    为什么走 data-api 而非本地读文件/直连 DB:
+      - messages 表才是"用户视角干净对话"(transcript 混着内部 ReAct 推理);
+      - Python 直连 DB 有三重坑(无 pymysql / 密码带引号需特殊解析 / RDS 白名单),
+        data-api 已连库有池, 且 pre-send-check 已在调它的 lifecycle 端点, 同构。
+
+    开关与参数 (环境变量):
+      CRON_RECENT_CONTEXT       "1"/"true"/"on" 才启用 (默认关)
+      CRON_RECENT_TURNS         最近几轮 (assistant 回复数), 默认 10
+      CRON_RECENT_MAX_TOKENS    本地估算 token 上限, 默认 6000
+    """
+    flag = os.environ.get("CRON_RECENT_CONTEXT", "").strip().lower()
+    if flag not in ("1", "true", "on", "yes"):
+        return ""
+
+    account_id = _account_id(workspace_dir)
+    turns = os.environ.get("CRON_RECENT_TURNS", "10").strip() or "10"
+    max_tokens = os.environ.get("CRON_RECENT_MAX_TOKENS", "6000").strip() or "6000"
+
+    try:
+        import urllib.parse
+        qs = urllib.parse.urlencode({"turns": turns, "maxTokens": max_tokens})
+        url = f"{LIFECYCLE_API}/v1/conversation/recent/{account_id}?{qs}"
+        with urllib.request.urlopen(url, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8"))
+    except (urllib.error.URLError, json.JSONDecodeError, OSError, ValueError) as e:
+        log(f"conversation/recent 调用失败 for {account_id}: {e}")
+        return ""
+
+    text = (data.get("text") or "").strip()
+    if not text:
+        return ""
+    # agent 读到的承接上下文。措辞明确「最近对话」+「据此自然承接」,
+    # 但不强制引用, 避免提醒变成复读机。
+    return ("\n\n最近和用户的对话(供你自然承接, 不要机械复述):\n"
+            + text)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pre-send check for meal/weight reminders")
     parser.add_argument("--workspace-dir", required=True, help="Agent workspace root")
@@ -688,10 +733,11 @@ def main():
     log("All checks passed")
 
     # stage_info 由 engagement_stage check 填入「认领前」的 stage/days_silent
+    recent = recent_conversation_block(args.workspace_dir)
     if stage_info["stage"] >= 2:
-        print(f"SEND recall stage={stage_info['stage']} days_silent={stage_info.get('days_silent', 0)}")
+        print(f"SEND recall stage={stage_info['stage']} days_silent={stage_info.get('days_silent', 0)}{recent}")
     else:
-        print("SEND")
+        print(f"SEND{recent}")
 
 
 if __name__ == "__main__":

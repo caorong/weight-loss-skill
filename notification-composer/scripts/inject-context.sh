@@ -5,8 +5,10 @@
 # Usage:
 #   bash inject-context.sh --workspace-dir /path/to/workspace --message "提醒内容"
 #
-# The script derives the sessionKey from the workspace directory name:
-#   workspace-wechat-dm-accxxx → agent:wechat-dm-accxxx:direct:accxxx
+# The script resolves the real direct-session key from the agent's sessions.json
+# (matching the `:direct:` suffix). Real format carries the channel prefix, e.g.:
+#   workspace-wechat-dm-accxxx → agent:wechat-dm-accxxx:wechat:default:direct:accxxx
+# (The old bare `agent:<id>:direct:<acc>` guess pointed at a nonexistent session.)
 
 set -euo pipefail
 
@@ -54,7 +56,35 @@ else
   exit 1
 fi
 
-SESSION_KEY="agent:${AGENT_ID}:direct:${ACCOUNT_ID}"
+# 真实的 direct session key 带 channel 前缀 (核实过实际格式):
+#   agent:wechat-dm-<acc>:wechat:default:direct:<acc>
+# 老写法 agent:<id>:direct:<acc> 会指向不存在的 session。
+# 优先从该 agent 的 sessions.json 里按 `:direct:` 后缀查真实 key,查不到再退回
+# 一个合理默认 (带 wechat:default 前缀), 最后才退回最老的裸格式。
+SESSION_KEY=""
+STATE_DIR=$(dirname "$(cd "$WORKSPACE_DIR" && pwd)")
+SESSIONS_JSON="${STATE_DIR}/agents/${AGENT_ID}/sessions/sessions.json"
+if [[ -f "$SESSIONS_JSON" ]]; then
+  SESSION_KEY=$(python3 -c "
+import json,sys
+try:
+    d=json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit()
+best=None
+for k,v in d.items():
+    if ':direct:' in k and ':cron:' not in k and isinstance(v,dict):
+        u=v.get('updatedAt',0) or 0
+        if best is None or u>best[0]: best=(u,k)
+print(best[1] if best else '')
+" "$SESSIONS_JSON")
+fi
+
+if [[ -z "$SESSION_KEY" ]]; then
+  # 退回默认: 带 channel 前缀 (匹配当前 wechat 渠道注册格式)
+  SESSION_KEY="agent:${AGENT_ID}:wechat:default:direct:${ACCOUNT_ID}"
+  echo "WARNING: 未从 sessions.json 解析到 direct key, 使用默认 $SESSION_KEY" >&2
+fi
 
 # Escape message for JSON (handle quotes, newlines, backslashes)
 JSON_MESSAGE=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$MESSAGE")

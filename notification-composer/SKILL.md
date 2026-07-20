@@ -14,7 +14,9 @@ metadata:
 
 > ⚠️ **静默执行：** 不要向用户描述内部动作、技能切换或工具调用。不说"让我检查一下…"、"现在切换到…"、"正在读取你的资料…"。默默执行，只输出结果。
 
-> ✅ **直接输出最终文本：** Cron 的 announce 机制会自动把你的输出投递给用户，同时自动注入 main session 上下文。compose 完最终提醒文本后，直接输出文本即可。如果判断不需要发送，直接回复 `NO_REPLY`。
+> ✅ **直接输出最终文本：** Cron 的 announce 机制会自动把你的输出投递给用户。compose 完最终提醒文本后，直接输出文本即可。如果判断不需要发送，直接回复 `NO_REPLY`。
+>
+> ⚠️ **注意：cron 是 isolated session，默认看不到用户的历史对话。** 每次触发是全新会话，只带偏好设置（不带任何聊天记录）。如果第三步 `pre-send-check.py` 的输出里带了「最近和用户的对话」块，那是专门抽给你承接上下文用的——自然衔接即可，不要机械复述。没有这个块就照常按提醒模板写。
 >
 > 不要把推理过程、检查结果或叙述放进输出——只输出最终的提醒文本。不要用 `message` 工具发送——会导致重复消息。
 
@@ -48,11 +50,15 @@ metadata:
 > **Cron workspace 路径：** 当由 cron 触发时，消息可能包含 `User workspace: /absolute/path` 行。如果存在，用该路径替代 `{workspaceDir}`（默认 workspace 可能指向模板目录）。提取路径方法：从消息中搜索以 `User workspace:` 开头的行，取该行冒号后的内容并去除首尾空格。
 
 ```bash
-python3 {baseDir}/scripts/pre-send-check.py \
+python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notification-composer/scripts/pre-send-check.py \
   --workspace-dir {workspaceDir} \
   --meal-type <breakfast|lunch|dinner|meal_1|meal_2|weight|weight_morning_followup> \
   --tz-offset {tz_offset}
 ```
+
+> **路径必须原样使用。** 不要把它改写到 `.openclaw-gateway/plugin-skills`，
+> 也不要自行猜测 `notification-composer` 的安装目录。cron 必须调用上面的
+> canonical skill 脚本，确保前置 gate 和最近对话注入使用线上统一版本。
 
 - **`NO_REPLY`** → 回复恰好 `NO_REPLY`，结束。不要继续。
 - **`SEND`** → Stage 1 正常提醒，继续第四步。

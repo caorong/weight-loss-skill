@@ -22,6 +22,7 @@ def _load(name, path):
 pre_send = _load("pre_send_check", SKILL / "pre-send-check.py")
 holiday = _load("holiday_dispatcher", SKILL / "holiday-dispatcher.py")
 load_meals = _load("load_meals", SKILL / "load-meals.py")
+extract_recent = _load("extract_recent", SKILL / "extract-recent.py")
 
 
 class TestGetLocalDate:
@@ -130,3 +131,48 @@ class TestLoadMealsMigrateMeal:
         })
         assert m["calories"] == 300
         assert m["protein"] == 15
+
+
+class TestExtractRecent:
+    """extract-recent.py:薄 HTTP 客户端(走 data-api)。轮次/清洗/截断逻辑在
+    data-api 端(见 data-api conversation.test.ts),这里只测 account 推导 +
+    调用失败静默返回空(绝不阻断提醒)。"""
+
+    def test_account_from_workspace(self):
+        assert extract_recent._account_from_workspace(
+            "/x/workspace-wechat-dm-acc12345") == "acc12345"
+        assert extract_recent._account_from_workspace(
+            "/x/workspace-wecom-dm-acc678") == "acc678"
+
+    def test_fetch_recent_empty_account(self):
+        assert extract_recent.fetch_recent("") == ""
+
+    def test_fetch_recent_unreachable_api_returns_empty(self):
+        # 指向一个必然连不上的端口 → 静默返回空,不抛异常
+        out = extract_recent.fetch_recent(
+            "acc00000000000000000", api="http://127.0.0.1:1")
+        assert out == ""
+
+    def test_fetch_recent_uses_token_budget(self, monkeypatch):
+        seen = {}
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def read(self):
+                return b'{"text":"ok"}'
+
+        def fake_urlopen(url, timeout):
+            seen["url"] = url
+            seen["timeout"] = timeout
+            return Response()
+
+        monkeypatch.setattr(extract_recent.urllib.request, "urlopen", fake_urlopen)
+        assert extract_recent.fetch_recent("acc123", turns=10, max_tokens=6000) == "ok"
+        assert "turns=10" in seen["url"]
+        assert "maxTokens=6000" in seen["url"]
+        assert "maxChars" not in seen["url"]

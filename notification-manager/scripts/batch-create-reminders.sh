@@ -43,6 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="${OPENCLAW_STATE_DIR:-$HOME/.openclaw-gateway}"
 CREATE_REMINDER="$SCRIPT_DIR/create-reminder.sh"
 FIND_SLOT="$SCRIPT_DIR/find-slot.py"
+NOTIFICATION_COMPOSER_BASE="$(cd "$SCRIPT_DIR/../../notification-composer" && pwd)"
 
 AGENT=""
 CHANNEL=""
@@ -210,6 +211,8 @@ should_create_type() {
 # --- Phase 1: Collect job definitions ---
 
 TIMEZONE=$(get_timezone)
+TZ_OFFSET=$(TZ_NAME="$TIMEZONE" python3 -c \
+  'import os; from datetime import datetime; from zoneinfo import ZoneInfo; print(int(datetime.now(ZoneInfo(os.environ["TZ_NAME"])).utcoffset().total_seconds()))')
 echo "Timezone: $TIMEZONE"
 
 EXISTING_JOBS=""
@@ -219,12 +222,12 @@ fi
 
 MEAL_SCHEDULE=$(get_meal_schedule)
 if [[ -z "$MEAL_SCHEDULE" ]]; then
-  echo "ERROR: No meal times in health-profile.md > Meal Schedule" >&2; exit 1
+  echo "WARNING: No meal times in health-profile.md > Meal Schedule; skipping meal reminders" >&2
+else
+  echo "Meal schedule:"
+  echo "$MEAL_SCHEDULE"
+  echo ""
 fi
-
-echo "Meal schedule:"
-echo "$MEAL_SCHEDULE"
-echo ""
 
 # Parallel arrays for queued jobs
 QUEUED_NAMES=()
@@ -419,8 +422,8 @@ PYEOF
   # Cron payload: task instruction only (per CONVENTIONS.md §11 — no
   # self-delivery wrapper). nudge=1 / nudge=2 tells the composer which copy
   # to use (day-1 vs softer follow-up).
-  FM_MSG_1="First run: python3 {notification-composer:baseDir}/scripts/pre-send-check.py --workspace-dir $WORKSPACE --meal-type first_meal_nudge --tz-offset {tz_offset}. If output is NO_REPLY, stop and output NO_REPLY. Otherwise run notification-composer for first_meal_nudge (nudge=1)."
-  FM_MSG_2="First run: python3 {notification-composer:baseDir}/scripts/pre-send-check.py --workspace-dir $WORKSPACE --meal-type first_meal_nudge --tz-offset {tz_offset}. If output is NO_REPLY, stop and output NO_REPLY. Otherwise run notification-composer for first_meal_nudge (nudge=2)."
+  FM_MSG_1="First run: python3 $NOTIFICATION_COMPOSER_BASE/scripts/pre-send-check.py --workspace-dir $WORKSPACE --meal-type first_meal_nudge --tz-offset $TZ_OFFSET. If output is NO_REPLY, stop and output NO_REPLY. Otherwise run notification-composer for first_meal_nudge (nudge=1)."
+  FM_MSG_2="First run: python3 $NOTIFICATION_COMPOSER_BASE/scripts/pre-send-check.py --workspace-dir $WORKSPACE --meal-type first_meal_nudge --tz-offset $TZ_OFFSET. If output is NO_REPLY, stop and output NO_REPLY. Otherwise run notification-composer for first_meal_nudge (nudge=2)."
 
   if [[ -n "$FM_DAY1" ]]; then
     if [[ "$DRY_RUN" == true ]]; then

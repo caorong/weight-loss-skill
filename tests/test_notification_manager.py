@@ -19,6 +19,24 @@ mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 
+class TestCronPayloadPathResolution:
+    def test_creator_expands_notification_composer_placeholders(self):
+        script = (SKILL / "create-reminder.sh").read_text()
+        assert 'NOTIFICATION_COMPOSER_BASE="$PROJECT_ROOT/.openclaw-user-service/skills/notification-composer"' in script
+        assert 'MESSAGE="${MESSAGE//\\{notification-composer:baseDir\\}/$NOTIFICATION_COMPOSER_BASE}"' in script
+        assert 'MESSAGE="${MESSAGE//\\{workspaceDir\\}/$USER_WORKSPACE}"' in script
+        assert 'MESSAGE="${MESSAGE//\\{tz_offset\\}/$TZ_OFFSET}"' in script
+
+    def test_first_meal_payload_is_resolved_before_creation(self):
+        script = (SKILL / "batch-create-reminders.sh").read_text()
+        first_meal_lines = [line for line in script.splitlines() if line.strip().startswith("FM_MSG_")]
+        assert len(first_meal_lines) == 2
+        assert all("$NOTIFICATION_COMPOSER_BASE/scripts/pre-send-check.py" in line
+                   for line in first_meal_lines)
+        assert all("--tz-offset $TZ_OFFSET" in line for line in first_meal_lines)
+        assert all("{notification-composer:baseDir}" not in line for line in first_meal_lines)
+
+
 class TestExpandField:
     def test_wildcard(self):
         assert set(mod._expand_field("*", 0, 5)) == {0, 1, 2, 3, 4, 5}
@@ -102,9 +120,9 @@ class TestWindowForType:
     def test_weight_same(self):
         assert mod._window_for_type("weight") == (10, 5)
 
-    def test_other_only_before(self):
-        # 其他 job 只允许提前 10 分,不推后
-        assert mod._window_for_type("weekly_report") == (10, 0)
+    def test_other_wider_after(self):
+        # tips/other 非时间敏感:提前 10 分 + 后移 30 分(bd828d2 放开,散开整点堆积)
+        assert mod._window_for_type("weekly_report") == (10, 30)
 
 
 class TestBuildUtcMinuteCounts:

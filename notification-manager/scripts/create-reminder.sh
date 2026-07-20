@@ -31,6 +31,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 STATE_DIR="${OPENCLAW_STATE_DIR:-$PROJECT_ROOT/.openclaw-gateway}"
+NOTIFICATION_COMPOSER_BASE="$PROJECT_ROOT/.openclaw-user-service/skills/notification-composer"
 
 AGENT=""
 NAME=""
@@ -79,18 +80,19 @@ if [[ -z "$NAME" ]]; then echo "ERROR: --name is required" >&2; exit 1; fi
 if [[ -z "$MESSAGE" ]]; then echo "ERROR: --message is required" >&2; exit 1; fi
 if [[ -z "$AT" && -z "$CRON_EXPR" ]]; then echo "ERROR: --at or --cron is required" >&2; exit 1; fi
 
+WS_CANDIDATES=(
+  "$STATE_DIR/workspace-$AGENT"
+  "$PROJECT_ROOT/.openclaw-user-service/workspaces/$AGENT"
+)
+
 # --- Timezone auto-detection ---
 # Read from USER.md in workspace
-if [[ "$TZ_EXPLICIT" == "false" && -n "$CRON_EXPR" ]]; then
+if [[ "$TZ_EXPLICIT" == "false" ]]; then
   HELPERS="$PROJECT_ROOT/.openclaw-strategic-management/scripts/usermd-helpers.sh"
   if [[ -f "$HELPERS" ]]; then
     source "$HELPERS"
   fi
 
-  WS_CANDIDATES=(
-    "$STATE_DIR/workspace-$AGENT"
-    "$PROJECT_ROOT/.openclaw-user-service/workspaces/$AGENT"
-  )
   for WS_DIR in "${WS_CANDIDATES[@]}"; do
     if [[ -f "$WS_DIR/USER.md" ]] && type usermd_read &>/dev/null; then
       AUTO_TZ=$(usermd_read "$WS_DIR" "Timezone" 2>/dev/null || echo "")
@@ -149,6 +151,18 @@ if [[ -n "$USER_WORKSPACE" ]]; then
   echo "Resolved user workspace: $USER_WORKSPACE"
 else
   echo "WARNING: Could not resolve user workspace for agent $AGENT" >&2
+fi
+
+# Expand skill/workspace placeholders before persisting the cron payload.
+# These are shell-time substitutions; the model must never guess a skill path.
+MESSAGE="${MESSAGE//\{notification-composer:baseDir\}/$NOTIFICATION_COMPOSER_BASE}"
+if [[ -n "$USER_WORKSPACE" ]]; then
+  MESSAGE="${MESSAGE//\{workspaceDir\}/$USER_WORKSPACE}"
+fi
+if [[ "$MESSAGE" == *"{tz_offset}"* ]]; then
+  TZ_OFFSET=$(TZ_NAME="$TZ" python3 -c \
+    'import os; from datetime import datetime; from zoneinfo import ZoneInfo; print(int(datetime.now(ZoneInfo(os.environ["TZ_NAME"])).utcoffset().total_seconds()))')
+  MESSAGE="${MESSAGE//\{tz_offset\}/$TZ_OFFSET}"
 fi
 
 # --- Anti-burst: adjust cron expression for recurring jobs ---
