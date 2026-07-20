@@ -8,7 +8,7 @@ agent 并二次泄露)。轮次口径 / 清洗 / 截断都在 data-api 端做, �
 供调试和 inject-context 复用。cron 主路径由 pre-send-check.py 直接调该端点。
 
 用法:
-  python3 extract-recent.py --account <accId> [--turns 10] [--max-chars 1200] [--api http://127.0.0.1:3100]
+  python3 extract-recent.py --account <accId> [--turns 10] [--max-tokens 6000] [--api http://127.0.0.1:3100]
   python3 extract-recent.py --workspace-dir /path/to/workspace-wechat-dm-<acc> [--turns 10]
 
 输出:
@@ -41,12 +41,12 @@ def _account_from_workspace(workspace_dir):
     return base
 
 
-def fetch_recent(account_id, turns=10, max_chars=1200, api=DEFAULT_API):
+def fetch_recent(account_id, turns=10, max_tokens=6000, api=DEFAULT_API):
     """返回最近 N 轮对话紧凑文本;失败或无内容返回空串。"""
     if not account_id:
         return ""
     try:
-        qs = urllib.parse.urlencode({"turns": turns, "maxChars": max_chars})
+        qs = urllib.parse.urlencode({"turns": turns, "maxTokens": max_tokens})
         url = f"{api}/v1/conversation/recent/{account_id}?{qs}"
         with urllib.request.urlopen(url, timeout=5) as r:
             data = json.loads(r.read().decode("utf-8"))
@@ -62,12 +62,13 @@ def main():
     src.add_argument("--account", help="account id (accXXXX...)")
     src.add_argument("--workspace-dir", help="用户 workspace 根目录, 自动推导 account")
     parser.add_argument("--turns", type=int, default=10, help="最近几轮 (assistant 回复数), 默认 10")
-    parser.add_argument("--max-chars", type=int, default=1200, help="输出字数上限, 默认 1200")
+    parser.add_argument("--max-tokens", type=int, default=6000,
+                        help="本地估算 token 上限, 默认 6000")
     parser.add_argument("--api", default=DEFAULT_API, help="data-api base url")
     args = parser.parse_args()
 
     account_id = args.account or _account_from_workspace(args.workspace_dir)
-    out = fetch_recent(account_id, turns=args.turns, max_chars=args.max_chars, api=args.api)
+    out = fetch_recent(account_id, turns=args.turns, max_tokens=args.max_tokens, api=args.api)
     if out:
         sys.stdout.write(out)
 

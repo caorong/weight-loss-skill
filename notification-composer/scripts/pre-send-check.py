@@ -632,7 +632,7 @@ def recent_conversation_block(workspace_dir):
     开关与参数 (环境变量):
       CRON_RECENT_CONTEXT       "1"/"true"/"on" 才启用 (默认关)
       CRON_RECENT_TURNS         最近几轮 (assistant 回复数), 默认 10
-      CRON_RECENT_MAX_CHARS     注入字数上限, 默认 1200
+      CRON_RECENT_MAX_TOKENS    本地估算 token 上限, 默认 6000
     """
     flag = os.environ.get("CRON_RECENT_CONTEXT", "").strip().lower()
     if flag not in ("1", "true", "on", "yes"):
@@ -640,11 +640,11 @@ def recent_conversation_block(workspace_dir):
 
     account_id = _account_id(workspace_dir)
     turns = os.environ.get("CRON_RECENT_TURNS", "10").strip() or "10"
-    max_chars = os.environ.get("CRON_RECENT_MAX_CHARS", "1200").strip() or "1200"
+    max_tokens = os.environ.get("CRON_RECENT_MAX_TOKENS", "6000").strip() or "6000"
 
     try:
         import urllib.parse
-        qs = urllib.parse.urlencode({"turns": turns, "maxChars": max_chars})
+        qs = urllib.parse.urlencode({"turns": turns, "maxTokens": max_tokens})
         url = f"{LIFECYCLE_API}/v1/conversation/recent/{account_id}?{qs}"
         with urllib.request.urlopen(url, timeout=5) as r:
             data = json.loads(r.read().decode("utf-8"))

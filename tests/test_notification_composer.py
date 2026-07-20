@@ -152,3 +152,27 @@ class TestExtractRecent:
         out = extract_recent.fetch_recent(
             "acc00000000000000000", api="http://127.0.0.1:1")
         assert out == ""
+
+    def test_fetch_recent_uses_token_budget(self, monkeypatch):
+        seen = {}
+
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+            def read(self):
+                return b'{"text":"ok"}'
+
+        def fake_urlopen(url, timeout):
+            seen["url"] = url
+            seen["timeout"] = timeout
+            return Response()
+
+        monkeypatch.setattr(extract_recent.urllib.request, "urlopen", fake_urlopen)
+        assert extract_recent.fetch_recent("acc123", turns=10, max_tokens=6000) == "ok"
+        assert "turns=10" in seen["url"]
+        assert "maxTokens=6000" in seen["url"]
+        assert "maxChars" not in seen["url"]
