@@ -485,7 +485,11 @@ PYEOF
   python3 "$FIND_SLOT" --batch-file "$BATCH_INPUT" > "$BATCH_OUTPUT"
 
   # Extract adjusted crons in order (same order as QUEUED_NAMES)
-  mapfile -t ADJUSTED_CRONS < <(python3 - "$BATCH_OUTPUT" <<'PYEOF'
+  # while-read instead of mapfile: macOS ships bash 3.2 (no mapfile), and the
+  # test suite runs this script on dev machines.
+  while IFS= read -r _cron_line; do
+    ADJUSTED_CRONS+=("$_cron_line")
+  done < <(python3 - "$BATCH_OUTPUT" <<'PYEOF'
 import json, sys
 with open(sys.argv[1]) as f:
     for r in json.load(f):
