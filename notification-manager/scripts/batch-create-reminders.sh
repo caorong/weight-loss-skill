@@ -3,7 +3,20 @@ set -euo pipefail
 
 # batch-create-reminders.sh — Create all reminder cron jobs in parallel.
 #
-# Two-phase execution:
+# ⭐ Detach-first execution model:
+#   When called without OPENCLAW_BATCH_DETACHED=1, the script re-execs itself
+#   under setsid+nohup in a new process group with stdout/stderr redirected to
+#   /tmp/batch-create-reminders/<agent>-<epoch>.log, then exits 0 immediately.
+#   The parent (agent's exec tool session) can be killed by tool timeout — the
+#   detached child survives because it's in its own session/process group.
+#
+#   This fixes the case where the agent's exec tool has a 30s timeout and the
+#   full batch (Phase 1 slot allocation + Phase 2 parallel cron.add's) takes
+#   45-90s. Previously the tool timeout would SIGTERM the shell, cascade-kill
+#   the 8 background `openclaw cron add` children, and leave 6/8 cron jobs
+#   never created.
+#
+# Two-phase execution (in detached child):
 #   Phase 1 (serial)   — collect job definitions, then call find-slot.py
 #                        --batch-file once to allocate all time slots in a
 #                        single cron list fetch. This prevents race conditions
@@ -80,6 +93,28 @@ if [[ ! -f "$HEALTH_PROFILE" ]]; then
   echo "ERROR: health-profile.md not found: $HEALTH_PROFILE" >&2; exit 1
 fi
 
+# ⭐ Detach guard: re-exec self via setsid+nohup so we survive parent shell death.
+# Placed AFTER validation errors so caller learns about invalid args synchronously.
+# Dry-run stays foreground (agent needs to see the plan).
+if [[ "${OPENCLAW_BATCH_DETACHED:-}" != "1" && "$DRY_RUN" == "false" ]]; then
+  LOG_DIR="/tmp/batch-create-reminders"
+  mkdir -p "$LOG_DIR"
+  LOG_FILE="$LOG_DIR/${AGENT}-$(date +%s).log"
+  export OPENCLAW_BATCH_DETACHED=1
+  setsid nohup bash "$0" \
+    --agent "$AGENT" \
+    --channel "$CHANNEL" \
+    --workspace "$WORKSPACE" \
+    $([[ "$SKIP_EXISTING" == "true" ]] && echo "--skip-existing") \
+    $([[ "$ONLY_TYPE" != "all" ]] && echo "--only $ONLY_TYPE") \
+    >"$LOG_FILE" 2>&1 </dev/null &
+  CHILD_PID=$!
+  disown "$CHILD_PID" 2>/dev/null || true
+  echo "batch-create-reminders detached: pid=$CHILD_PID log=$LOG_FILE"
+  echo "tail -f '$LOG_FILE' to watch progress"
+  exit 0
+fi
+
 # --- Helpers ---
 
 read_usermd() {
@@ -96,13 +131,26 @@ get_timezone() {
 
 get_meal_schedule() {
   local in_section=false
+  # 兼容 onboarding 写的两种 Meal Schedule 格式:
+  #   A) 同行加粗:  - **Breakfast:** 08:00
+  #   B) Schedule 子项(可缩进):  - **Schedule:** 下的  - Lunch: 12:00 / - Dinner: 19:00
+  # 只认真实餐次名(Breakfast/Lunch/Brunch/Dinner/Supper);Meals per Day/Schedule/
+  # Snack/Note 等非"正餐时间"行一律跳过(避免"下午加餐(骑车前)"这类描述当时间解析失败)。
+  # 时间值交给 extract_time 抽首个 HH:MM(能容忍 ~8:00 / 11:00–12:00 区间 / 带注释)。
+  local meal_re='^(Breakfast|Lunch|Brunch|Dinner|Supper)$'
   while IFS= read -r line; do
     [[ "$line" == "## Meal Schedule" ]] && in_section=true && continue
     if [[ "$in_section" == true ]]; then
       [[ "$line" =~ ^##\  ]] && break
-      if [[ "$line" =~ ^-\ \*\*([^*]+):\*\*\ (.+)$ ]]; then
-        local meal="${BASH_REMATCH[1]}" time="${BASH_REMATCH[2]}"
-        [[ "$meal" != "Meals per Day" && "$time" != "—" && -n "$time" ]] && echo "$meal $time"
+      local meal="" time=""
+      if [[ "$line" =~ ^-\ \*\*([^*]+):\*\*\ (.+)$ ]]; then           # A) - **Meal:** time
+        meal="${BASH_REMATCH[1]}"; time="${BASH_REMATCH[2]}"
+      elif [[ "$line" =~ ^[[:space:]]*-\ ([A-Za-z]+):\ *(.+)$ ]]; then  # B) 缩进子项  - Meal: time
+        meal="${BASH_REMATCH[1]}"; time="${BASH_REMATCH[2]}"
+      fi
+      if [[ -n "$meal" && "$meal" =~ $meal_re ]]; then
+        local t; t=$(extract_time "$time")
+        [[ -n "$t" ]] && echo "$meal $t"
       fi
     fi
   done < "$HEALTH_PROFILE"
@@ -174,12 +222,12 @@ fi
 
 MEAL_SCHEDULE=$(get_meal_schedule)
 if [[ -z "$MEAL_SCHEDULE" ]]; then
-  echo "ERROR: No meal times in health-profile.md > Meal Schedule" >&2; exit 1
+  echo "WARNING: No meal times in health-profile.md > Meal Schedule; skipping meal reminders" >&2
+else
+  echo "Meal schedule:"
+  echo "$MEAL_SCHEDULE"
+  echo ""
 fi
-
-echo "Meal schedule:"
-echo "$MEAL_SCHEDULE"
-echo ""
 
 # Parallel arrays for queued jobs
 QUEUED_NAMES=()
