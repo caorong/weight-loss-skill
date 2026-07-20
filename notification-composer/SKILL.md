@@ -50,11 +50,15 @@ metadata:
 > **Cron workspace 路径：** 当由 cron 触发时，消息可能包含 `User workspace: /absolute/path` 行。如果存在，用该路径替代 `{workspaceDir}`（默认 workspace 可能指向模板目录）。提取路径方法：从消息中搜索以 `User workspace:` 开头的行，取该行冒号后的内容并去除首尾空格。
 
 ```bash
-python3 {baseDir}/scripts/pre-send-check.py \
+python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notification-composer/scripts/pre-send-check.py \
   --workspace-dir {workspaceDir} \
   --meal-type <breakfast|lunch|dinner|meal_1|meal_2|weight|weight_morning_followup> \
   --tz-offset {tz_offset}
 ```
+
+> **路径必须原样使用。** 不要把它改写到 `.openclaw-gateway/plugin-skills`，
+> 也不要自行猜测 `notification-composer` 的安装目录。cron 必须调用上面的
+> canonical skill 脚本，确保前置 gate 和最近对话注入使用线上统一版本。
 
 - **`NO_REPLY`** → 回复恰好 `NO_REPLY`，结束。不要继续。
 - **`SEND`** → Stage 1 正常提醒，继续第四步。
