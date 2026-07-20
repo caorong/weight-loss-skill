@@ -52,21 +52,32 @@ WORKSPACE="$GW/workspace-wechat-dm-$ACC"
 RENDER_PY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/render-card-svg.py"
 LOG="$GW/card-send.log"
 
-# 1. robotId: 显式参数优先,否则从 agent-registry 反查
+# 1. robotId: 显式参数优先 → agent-registry 反查 → 兜底读 workspace 的 wechat-identity.json。
+#    兜底原因:部分 shard 副机用户 registry 的 profile 只同步了 name、缺 rawEvent.robot_id
+#    (见 registry-writer 修复 af88601 的历史遗留),但 wechat-identity.json 里 robotId 一直都有。
+#    没这个兜底,这些用户发卡会因查不到 robotId 失败 → 周报回退成发链接。
 if [[ -n "$ROBOT_ARG" ]]; then
   ROBOT="$ROBOT_ARG"
 else
   ROBOT=$(python3 -c "
 import json,sys
-d=json.load(open('$REGISTRY'))
-e=d.get('agents',{}).get('$ACC')
-if not e: sys.exit('no-entry')
-r=e.get('profile',{}).get('rawEvent',{}).get('robot_id')
-print(r or '', end='')
+r=''
+# a) agent-registry: profile.rawEvent.robot_id
+try:
+    d=json.load(open('$REGISTRY'))
+    e=d.get('agents',{}).get('$ACC') or {}
+    r=e.get('profile',{}).get('rawEvent',{}).get('robot_id') or ''
+except Exception: pass
+# b) 兜底: workspace 的 wechat-identity.json 的 robotId
+if not r:
+    try:
+        r=json.load(open('$WORKSPACE/wechat-identity.json')).get('robotId') or ''
+    except Exception: pass
+print(r, end='')
 " 2>/dev/null || true)
 fi
 if [[ -z "$ROBOT" ]]; then
-  echo "$(date '+%F %T') [$ACC] ERR: registry 查不到 robot_id" >> "$LOG"
+  echo "$(date '+%F %T') [$ACC] ERR: registry+identity 都查不到 robot_id" >> "$LOG"
   echo "no-robot" >&2; exit 1
 fi
 
