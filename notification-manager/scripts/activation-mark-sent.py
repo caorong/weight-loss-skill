@@ -12,13 +12,6 @@ Generic over nudge type via --counter:
   - first_meal_nudges_sent   (Part-2 first-meal nudge: onboarded, never logged)
   - nudges_sent              (Part-1 activation nudge: greeted, never replied)
 
-Also supports one-time boolean flags via --flag (mutually exclusive with
---counter). Unlike counters (increment), a flag is set to `true` once and used
-for "show this guidance exactly once" checks:
-  - daily_summary_prompted   (personal-data-query: first daily-summary ask →
-                              told user to view in mini-program + offered a
-                              daily card cron; set once so we never re-offer)
-
 Behavior:
   - Read-modify-write the `activation` block inside engagement.json.
   - Create the `activation` block if absent; never clobber sibling fields
@@ -29,11 +22,8 @@ Behavior:
 Usage:
   python3 activation-mark-sent.py --workspace-dir <WS> \
       --counter first_meal_nudges_sent|nudges_sent
-  python3 activation-mark-sent.py --workspace-dir <WS> \
-      --flag daily_summary_prompted
 
 Output (stdout): JSON {"status":"ok","counter":<name>,"value":<new_value>}
-                 or  {"status":"ok","flag":<name>,"value":true}
 Exit code 0 on success, 1 on hard failure (e.g. cannot write).
 """
 
@@ -45,7 +35,6 @@ import sys
 import tempfile
 
 VALID_COUNTERS = ("first_meal_nudges_sent", "nudges_sent")
-VALID_FLAGS = ("daily_summary_prompted",)
 
 
 def _normalize_path(p):
@@ -62,13 +51,9 @@ def main():
         description="Increment an activation nudge counter in engagement.json"
     )
     parser.add_argument("--workspace-dir", required=True, help="Agent workspace root")
-    parser.add_argument("--counter", choices=VALID_COUNTERS,
+    parser.add_argument("--counter", required=True, choices=VALID_COUNTERS,
                         help="Which activation counter to increment")
-    parser.add_argument("--flag", choices=VALID_FLAGS,
-                        help="Which one-time boolean flag to set true (instead of a counter)")
     args = parser.parse_args()
-    if bool(args.counter) == bool(args.flag):
-        parser.error("exactly one of --counter or --flag is required")
     workspace_dir = _normalize_path(args.workspace_dir)
 
     path = os.path.join(workspace_dir, "data", "engagement.json")
@@ -93,16 +78,11 @@ def main():
         activation = data.get("activation")
         if not isinstance(activation, dict):
             activation = {}
-        if args.flag:
-            activation[args.flag] = True
-            result = {"status": "ok", "flag": args.flag, "value": True}
-        else:
-            current = activation.get(args.counter, 0)
-            if not isinstance(current, int):
-                current = 0
-            new_value = current + 1
-            activation[args.counter] = new_value
-            result = {"status": "ok", "counter": args.counter, "value": new_value}
+        current = activation.get(args.counter, 0)
+        if not isinstance(current, int):
+            current = 0
+        new_value = current + 1
+        activation[args.counter] = new_value
         data["activation"] = activation
 
         # Atomic write to avoid races with the gateway / concurrent crons.
@@ -118,7 +98,10 @@ def main():
                 pass
             raise
 
-        print(json.dumps(result, ensure_ascii=False))
+        print(json.dumps(
+            {"status": "ok", "counter": args.counter, "value": new_value},
+            ensure_ascii=False,
+        ))
         return 0
     except Exception as e:
         print(f"[activation-mark-sent] error: {e}", file=sys.stderr)
