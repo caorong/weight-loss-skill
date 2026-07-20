@@ -286,7 +286,7 @@ def _schedule_d7_mpcard_cron(workspace: str, now: datetime) -> str:
             "Then reply with EXACTLY this text and nothing else:\n"
             f"{_uname}！🎉 偷偷数了下，你已经坚持记录整整一周啦～太可以了吧！\n"
             "这几天你吃了啥、体重怎么变的，我可全都给你存进专属减脂档案里咯 📒✨\n"
-            "之后想看数据随时发送“减脂档案”"
+            "以后不用翻记录啦——随时发句“减脂档案”，你的数据我立马变卡片给你 ✨"
         )
 
         created = subprocess.run(
