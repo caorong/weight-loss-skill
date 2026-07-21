@@ -1,30 +1,13 @@
----
-name: reward-engine
-version: 1.0.0
-description: >
-  Calculates cumulative calorie-target achievement days and badge level.
-  Called BY other skills (diet-tracking-analysis) after meal check-in — not a standalone skill.
-  
-  WHEN to call:
-  - diet-tracking-analysis: after meal_checkin returns successfully (action: create/append).
-    Run badge-calc.py check. If level_up is true, append badge celebration + image to reply.
-
-  WHEN NOT to call:
-  - During corrections or deletions (action: correct/delete)
-  - During recall stages (Stage 2/3/4)
-  - If meal_checkin failed or returned an error
-
-  DELIVERY: Badge image sent via MEDIA directive when level_up is true.
-  This skill never sends messages directly — only provides data + generates images.
-
-  Returns: JSON with qualified_today, current_count, current_level, level_up, badge info.
-metadata:
-  openclaw:
-    emoji: "trophy"
-    homepage: https://github.com/NanoRhino/weight-loss-skill
----
-
 # Reward Engine — Calorie Target Badge
+
+> **⚠️ 已退役为纯程序资产(2026-07-21,audit Phase 3.2)。**
+> 徽章链路由 gateway `badge-trigger` 插件全程接管:`after_tool_call` 钩子在每次
+> `meal_checkin` 后直接 exec `scripts/badge-calc.py`,level-up 时调度 celebration
+> cron——agent(LLM)全程不参与,不需要知道本 skill 存在。
+> 本文件从 SKILL.md 改名 README.md 以摘出 skill 发布(加载器只认 SKILL.md),
+> description 不再进每请求 prompt(省 ~200 token/请求)。
+> `scripts/` `assets/` `templates/` 仍被 badge-trigger 依赖,**不可删**。
+> 以下为原设计文档,供维护 badge-calc.py 时参考。
 
 > ⚠️ **SILENT OPERATION:** Never narrate internal actions or tool calls.
 
