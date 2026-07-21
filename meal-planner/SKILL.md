@@ -152,6 +152,8 @@ Ask which diet mode the user would like to follow. Instead of listing all availa
 
 Available modes: Balanced / Flexible, Healthy U.S.-Style (USDA), High-Protein, Low-Carb, Keto, Mediterranean, Plant-Based, Intermittent Fasting (16:8), Intermittent Fasting (5:2).
 
+⚠️ **Safety screening before recommending IF or Keto:** check `USER.md > Health Flags` and `flags.*` (engagement data) first. If the user has `history_of_ed`, `possible_restriction`, is pregnant/breastfeeding, or has a chronic condition (diabetes, kidney/liver disease): do NOT include IF (16:8 / 5:2) or Keto among the two recommended options in Round 1. If such a user explicitly asks for IF/Keto, don't refuse outright — explain why it's not a good fit for them and recommend consulting a doctor before starting; offer Balanced or Mediterranean as the alternative. (5:2's 500–600 kcal fasting days sit at the edge of the very-low-calorie red line — treat it with the same caution.)
+
 | Mode | Fat Range | Best For | Key Constraint |
 |---|---|---|---|
 | **Healthy U.S.-Style (USDA)** | 20–35% | Following the Dietary Guidelines; general health | Added sugars <10%, sat fat <10%, sodium <2,300mg |

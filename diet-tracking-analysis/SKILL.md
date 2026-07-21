@@ -406,6 +406,7 @@ Driven purely by `evaluation.recent_overshoot_count` (overshoot days in last 7):
 - **0 days** → Normal tone, "get back on track tomorrow."
 - **1 day** → Gentle nudge, "been over a couple times recently, watch out."
 - **2+ days** → Serious: state consequences + analyze cause + actionable plan. No consolation.
+  - **Exception:** if `USER.md > Health Flags` includes `history_of_ed` (or `flags.possible_restriction` is set), do NOT use the serious/no-consolation tone — stay gentle and factual, never punitive. Harsh criticism of overeating is dangerous for ED-history users. (Same exemption as notification-composer's weekly low-cal check.)
 - User shows negative emotion → empathy first, defer to emotional-support (P1).
 
 ### Photo Reference Object
