@@ -35,10 +35,6 @@ metadata:
 
 ## 执行流程
 
-### Step 1: 推出 account_id
-
-`account_id` = workspace 目录名里的 accountId(如 `workspace-wechat-dm-acckyoy8...` → `acckyoy8...`)。
-
 ### Step 2: 写一句当下语境的短文案
 
 发卡时可**附带一句贴合当下对话的短文案**,连着卡一起发。**不传文案则只发卡片、不发文字**(无任何兜底文案)——自然语言场景建议显式传一句,让回复更自然。
@@ -52,10 +48,10 @@ metadata:
 ### Step 3: 发卡
 
 ```bash
-bash {baseDir}/scripts/send-profile-card.sh {account_id} "{Step2 的短文案}"
+bash {baseDir}/scripts/send-profile-card.sh "{workspaceDir}" "{Step2 的短文案}"
 ```
 
-- 脚本转调业务统一入口 `shared/card/build-and-send-card.sh`(反查 robotId、取密钥、生成封面 SVG),底层由 backend `send-miniprogram-card.mjs` 渲染发送
+- 脚本从 `workspaceDir` 目录名读取 `account_id`,再转调业务统一入口 `shared/card/build-and-send-card.sh`(反查 robotId、取密钥、生成封面 SVG),底层由 backend `send-miniprogram-card.mjs` 渲染发送
 - 输出 `ok` = 成功 → **本轮结束,回复 `NO_REPLY`,不再发任何文字**
 - 非 0 退出 = 发送失败 → **仅此时**回退到一条文字(见下),保证用户有回应
 
@@ -63,17 +59,3 @@ bash {baseDir}/scripts/send-profile-card.sh {account_id} "{Step2 的短文案}"
 ```
 {Name}~ 你的减脂档案我这就整理,稍等我一下 🙌
 ```
-
----
-
-## Writes
-
-无。本 skill 只读 `USER.md`,不写任何数据文件(卡片是静态固定底图,不落库)。
-
----
-
-## Skill Routing
-
-Priority Tier P4 (Reporting)。触发词与 `personal-data-query`(仅"今天/今日"单日)、`weekly-report`(仅"周报/这周")不重叠。
-- 用户说"周报" → weekly-report;说"档案/曲线/整体进展" → 本 skill。
-- 同时命中(如"给我看看这周的档案")→ 以"周报"为准走 weekly-report(周级优先于泛档案)。
