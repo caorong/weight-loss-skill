@@ -737,7 +737,9 @@ def main():
     if stage_info["stage"] >= 2:
         print(f"SEND recall stage={stage_info['stage']} days_silent={stage_info.get('days_silent', 0)}{recent}")
     else:
-        print(f"SEND{recent}")
+        # Stage 1 也带 days_silent:SKILL.md 温柔提醒(Gentle Nudge)按 days_silent==2 触发,
+        # 不带的话 agent 拿不到数据,nudge 永远不生效
+        print(f"SEND days_silent={stage_info.get('days_silent', 0)}{recent}")
 
 
 if __name__ == "__main__":

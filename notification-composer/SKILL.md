@@ -61,7 +61,7 @@ python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notificati
 > canonical skill 脚本，确保前置 gate 和最近对话注入使用线上统一版本。
 
 - **`NO_REPLY`** → 回复恰好 `NO_REPLY`，结束。不要继续。
-- **`SEND`** → Stage 1 正常提醒，继续第四步。
+- **`SEND days_silent=X`** → Stage 1 正常提醒，继续第四步（`days_silent` 供温柔提醒判断用，见 § 温柔提醒）。
 - **`SEND recall stage=N days_silent=X`** → 用户处于召回阶段（Stage N）。**必须发召回消息，不是正常提醒。** 忽略 cron 原始的 meal-type，按召回阶段的语气和内容模板写。参考第四步的 Stage 2/3/4 分支。
 
 > ⚠️ pre-send-check 会在请假期间自动返回 `NO_REPLY`，无需 agent 额外判断。
@@ -85,7 +85,7 @@ python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notificati
 
 组合餐前提醒（§ 餐前提醒）或体重提醒（§ 体重提醒）。compose 完成后执行**第五步**发送。
 
-如果 `days_silent` 为 2（来自第二步），在当天第一个 meal cron 前加一句**温柔提醒（Gentle Nudge）**。见 § 温柔提醒。仅 Day 3（days_silent=2）加 nudge，Day 1-2 正常不加。
+如果 `days_silent` 为 2（读第三步输出 `SEND days_silent=X` 中的值），在当天第一个 meal cron 前加一句**温柔提醒（Gentle Nudge）**。见 § 温柔提醒。仅 Day 3（days_silent=2）加 nudge，Day 1-2 正常不加。
 
 #### Stage 2 → 召回（Day 4 和 Day 6）
 

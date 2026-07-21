@@ -33,6 +33,7 @@ When called by another skill, **always check channel first**. If the channel doe
 |---|---|---|---|---|
 | Weight Loss Plan | `PLAN.md` | (default) | `weight-loss-plan` | `generate-html.py` |
 | Meal Plan | `MEAL-PLAN.md` | `meal-plan` | `meal-plan` | `generate-meal-plan-html.py` |
+| Exercise Plan | `EXERCISE-PLAN.md` | `exercise-plan` | `exercise-plan` | `generate-exercise-plan-html.py` |
 
 ## Primary Mode: HTML + Cloud Storage Presigned URL
 

@@ -103,7 +103,9 @@ Core principles:
 
 ## Step 3: Present the Plan
 
-### Output as HTML File (Not Chat Text)
+**Channel check first:** read `{plan-export:baseDir}/config.json` → `urlExportChannels`, and the workspace's `channel-source.json`. If the user's channel is **not** in the list (e.g. wechat), skip the HTML/URL flow entirely and use **Inline Text Fallback** below.
+
+### URL channels: Output as HTML File (Not Chat Text)
 
 1. Write `EXERCISE-PLAN.md` in workspace (schema: `references/exercise-plan-schema.md`). **Metadata keys and section headers MUST be English** (parser depends on them). Values/content localized.
 2. Run export:
@@ -125,6 +127,12 @@ Send "正在生成..." BEFORE generating. Do NOT paste full plan in chat.
 > **概要：** 每周 [X] 天 · [训练分化] · [目标]
 
 **Re-link:** Read `plan-url.json` → if expired, re-run export.
+
+### Non-URL channels (wechat etc.): Inline Text Fallback
+
+1. Still write `EXERCISE-PLAN.md` in workspace (same schema — it is the data source for future edits/queries).
+2. Present the plan as a plain-text message: weekly schedule day by day (day → focus → exercises with sets×reps), keep it compact — one line per exercise, no markdown tables. Include warm-up/cooldown as one line each.
+3. End with the same summary line: 每周 [X] 天 · [训练分化] · [目标]。
 
 ### Content Format Rules
 

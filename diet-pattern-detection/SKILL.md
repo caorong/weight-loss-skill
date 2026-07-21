@@ -46,7 +46,8 @@ Daily cron job. Start date: `Onboarding Completed` + 3 days (from `health-profil
      --data-dir {workspaceDir}/data/meals \
      --current-mode <from health-profile.md > Diet Config > Diet Mode> \
      --weight <current weight from latest weight.json entry> \
-     --target-weight <target weight from PLAN.md>
+     --target-weight <target weight from PLAN.md> \
+     --tz-offset {tz_offset}
    ```
    If result has `reason: "insufficient_data"` (< 3 days) → reply exactly `NO_REPLY` (suppresses delivery; do NOT emit a free-text explanation). Cron preserved, retry tomorrow.
 
@@ -55,10 +56,12 @@ Daily cron job. Start date: `Onboarding Completed` + 3 days (from `health-profil
    - `has_pattern: false` → no message (pattern matches current mode, all good).
 
 4. **Self-destruct** (when result is `has_pattern` true or false, NOT insufficient_data):
-   1. List current agent's cron jobs (`cron list`)
+   1. List current agent's cron jobs: `bash {reminder-manager:baseDir}/scripts/list-reminders.sh --agent {agentId}`
    2. Find job with name containing "diet-pattern" or "Diet pattern"
-   3. Delete it (`cron remove`)
+   3. Delete it: `bash {reminder-manager:baseDir}/scripts/delete-reminder.sh --agent {agentId} --job <jobId>`
    4. Write completion date to `health-profile.md > Automation > Pattern Detection Completed: <YYYY-MM-DD>`
+
+   > ⚠️ Never call the `cron` tool directly (`cron list` / `cron remove`) — always go through the reminder-manager scripts above (AGENTS.md red line; cross-user cron deletion incident).
 
 ## Reference Files
 
