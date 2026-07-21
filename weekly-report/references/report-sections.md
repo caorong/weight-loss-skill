@@ -43,7 +43,7 @@ Run after Section 2.
 **Data logic:**
 - Read `summary.safety` from collect-weekly-data.py output (if available), or run:
   ```bash
-  python3 {notification-composer:baseDir}/scripts/weekly-low-cal-check.py \
+  python3 {baseDir}/scripts/weekly-low-cal-check.py \
     --data-dir {workspaceDir}/data/meals \
     --bmr <BMR from PLAN.md> \
     --date <end-of-week YYYY-MM-DD> \
