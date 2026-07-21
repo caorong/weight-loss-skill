@@ -1,13 +1,10 @@
----
-name: plan-card
-version: 1.0.0
-description: "Programmatic (non-conversational) skill that generates the user's weight-loss plan per the canonical Step-3 spec (user-onboarding-profile) from handoff profile data, and renders it as a branded MMS plan-card PNG plus PLAN.md markdown. Invoked directly by the openclaw-infra Twilio extension via a frozen CLI — it is NOT triggered by user conversation. Do not invoke this skill in chat; during conversational onboarding the plan is produced by user-onboarding-profile / weight-loss-planner."
-metadata:
-  openclaw:
-    emoji: "frame_with_picture"
----
-
 # Plan Card — SMS/MMS Plan Image + PLAN.md
+
+> **已摘出 skill 发布(2026-07-21,audit Phase 3.3)。** 纯程序化管线,LLM 全程
+> 不参与:北美 openclaw 部署的 Twilio 扩展经 `planImage.scriptPath` 直调
+> `scripts/plan-to-image.py`(冻结 CLI)。description 不再进每请求 prompt
+> (省 ~122 token/请求)。`scripts/` `templates/plan-card.html` `references/`
+> 为运行依赖,不可删。以下为管线文档。
 
 Deterministic pipeline that turns handoff profile data into (a) a branded
 NanoRhino plan card PNG for MMS delivery and (b) PLAN.md markdown content —
