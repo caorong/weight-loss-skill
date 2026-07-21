@@ -35,7 +35,7 @@ metadata:
 
 ## 执行流程
 
-### Step 2: 写一句当下语境的短文案
+### Step 1: 写一句当下语境的短文案
 
 发卡时可**附带一句贴合当下对话的短文案**,连着卡一起发。**不传文案则只发卡片、不发文字**(无任何兜底文案)——自然语言场景建议显式传一句,让回复更自然。
 
@@ -45,7 +45,7 @@ metadata:
 
 语言按 `USER.md > Language`(zh/en),不要自行推断。
 
-### Step 3: 发卡
+### Step 2: 发卡
 
 ```bash
 bash {baseDir}/scripts/send-profile-card.sh "{workspaceDir}" "{Step2 的短文案}"
