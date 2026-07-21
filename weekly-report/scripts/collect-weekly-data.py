@@ -160,6 +160,21 @@ def collect_meals(nutrition_calc, data_dir, start_date, end_date, tz_offset):
     return days
 
 
+def meal_frequency(days):
+    """统计各主餐(早/午/晚)在本周被打卡的天数。返回 {breakfast, lunch, dinner}。"""
+    freq = {"breakfast": 0, "lunch": 0, "dinner": 0}
+    for d in days:
+        if not d.get("logged"):
+            continue
+        seen = set()
+        for meal in d.get("meals", []):
+            mt = meal.get("meal_type")
+            if mt in freq and mt not in seen and (meal.get("cal", 0) or 0) > 0:
+                seen.add(mt)
+                freq[mt] += 1
+    return freq
+
+
 def collect_weight(weight_tracker, data_dir, start_date, end_date, display_unit):
     """Collect weight data for the date range."""
     if not weight_tracker:
@@ -752,6 +767,13 @@ def main():
 
     # Collect all data
     meals = collect_meals(None, meals_dir, args.start_date, args.end_date, args.tz_offset)
+    # 本周 & 上周各餐打卡天数(供周报"较上周 +N"用)
+    _start_dt = datetime.strptime(args.start_date, "%Y-%m-%d")
+    _prev_start = (_start_dt - timedelta(days=7)).strftime("%Y-%m-%d")
+    _prev_end = (_start_dt - timedelta(days=1)).strftime("%Y-%m-%d")
+    this_meal_freq = meal_frequency(meals)
+    prev_meals = collect_meals(None, meals_dir, _prev_start, _prev_end, args.tz_offset)
+    prev_meal_freq = meal_frequency(prev_meals)
     weight = collect_weight(weight_tracker, data_dir, args.start_date, args.end_date, args.display_unit)
     # Also collect ALL historical weight for chart rendering
     all_weight = collect_weight(weight_tracker, data_dir, "2000-01-01", args.end_date, args.display_unit)
@@ -875,6 +897,8 @@ def main():
         },
         "plan": plan,
         "summary": summary,
+        "meal_freq": this_meal_freq,
+        "prev_meal_freq": prev_meal_freq,
         "days": meals,
         "weight": weight,
         "weight_all": all_weight.get("readings", []),
