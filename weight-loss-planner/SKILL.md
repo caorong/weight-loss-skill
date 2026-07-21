@@ -146,7 +146,7 @@ Default to the **midpoint** of the recommended range unless user preference, age
 
 - Weekly loss rate should not exceed 1 kg / 2 lbs per week for extended periods (>2 weeks)
 - Daily calorie intake must not go below **max(BMR, 1,000 kcal/day)** — if the math pushes below this floor, flag it clearly, set intake to the floor, and adjust the rate/timeline accordingly. See `references/formulas.md` for detailed floor calculation.
-- **Below-BMR compliance is checked weekly, not per-meal.** During daily tracking, per-meal checkpoints evaluate calorie/macro balance against the daily target. Whether the user is consistently eating below the calorie floor is assessed once per week via the `weekly-low-cal-check` command in `diet-tracking-analysis`. This avoids noisy day-to-day alerts while still catching sustained under-eating.
+- **Below-BMR compliance is checked weekly, not per-meal.** During daily tracking, per-meal checkpoints evaluate calorie/macro balance against the daily target. Whether the user is consistently eating below the calorie floor is assessed once per week via `{notification-composer:baseDir}/scripts/weekly-low-cal-check.py` (surfaced in Monday's first meal reminder; see `notification-composer` SKILL.md § 每周低热量检查). This avoids noisy day-to-day alerts while still catching sustained under-eating.
 - If the user's target BMI would be below 18.5, express concern and suggest they discuss with a healthcare provider
 - Deficit reference: 0.5 kg (1 lb)/week ≈ 500 kcal/day; 0.7 kg (1.5 lbs)/week ≈ 750; 1 kg (2 lbs)/week ≈ 1,000
 

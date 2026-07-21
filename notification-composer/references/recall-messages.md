@@ -197,13 +197,9 @@ python3 {notification-manager:baseDir}/scripts/activation-mark-sent.py \
 - 身体机制科普（血糖、代谢等）
 - 反直觉的营养知识
 
-### 第2次：功能更新
-- 从 `references/changelog.md` 读取最新的产品更新
-- 用自然语气告诉用户具体改了什么、对她有什么用
-- **不编造功能更新**，changelog里没有就跳过，改发营养知识或近况
-- 发送后在 changelog.md 的对应条目「已推送用户」中追加用户标识
+### 第2次：近况询问
 
-### 第3次：近况询问
+### 第3次：营养知识（换角度）
 - 随口问问最近怎么样、在吃什么
 - 像朋友偶尔想起你发条消息
 - 不期待回复，不施压
@@ -230,8 +226,7 @@ python3 {notification-manager:baseDir}/scripts/activation-mark-sent.py \
 **触发：** Stage 4，每月1次（由 pre-send-check 控制间隔）
 
 **策略：**
-- 优先从 `references/changelog.md` 取功能更新
-- changelog 没有新内容就发近况问候
+- 近况问候或营养知识轮换（用 `recall_topics` 去重）
 - 语气最轻最淡，像很久没联系的朋友
 - 不期待回复
 

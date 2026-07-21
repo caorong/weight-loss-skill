@@ -201,7 +201,7 @@ python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py bmi \
 
 5. **生成画像** — 静默保存所有画像文件（见下方"保存画像文件"）。把映射得到的 `activity_level` 写入 `health-profile.md > Activity & Lifestyle > Activity Level`。
 
-6. **时区** — 此处 **不** 处理时区。它存于 USER.md > Locale & Timezone。如缺失，运行 update-timezone.sh。
+6. **时区** — 此处 **不** 处理时区。它存于 USER.md > Locale & Timezone。如缺失，问用户所在城市/时区并写入 USER.md；每日 lifecycle sweep 会兜底回填。
 
 7. **继续 Step 3** — 画像保存后，直接在本技能内进入 Step 3（减脂方案）。**不要** 切到其他技能——完整的引导流程（画像 → 方案 → 饮食模板）都在本技能内。用一句自然的过渡，例："很好，你的信息已经记录好了！接下来我来给你制定一个减脂计划。"
 

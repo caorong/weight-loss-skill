@@ -109,8 +109,8 @@ python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notificati
 
 **内容类型轮换（按顺序）：**
 1. 第1次：专业营养知识（结合节气、食材科学、用户数据）
-2. 第2次：功能更新（从 `references/changelog.md` 读取，无更新则改发营养知识或近况）
-3. 第3次：近况询问
+2. 第2次：近况询问
+3. 第3次：营养知识（换角度，避免和第1次重复；用 `recall_topics` 去重）
 
 根据 `references/recall-messages.md` 中对应策略规则自行生成内容。
 
@@ -123,7 +123,7 @@ python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notificati
 
 **频率：** 每月一次（由 `pre-send-check.py` 经 lifecycle API 自动控制间隔与去重）。
 
-**内容：** 优先从 `references/changelog.md` 取功能更新，无新内容则发近况问候。
+**内容：** 近况问候或营养知识轮换（用 `recall_topics` 去重）。
 
 发送后：将主题摘要写入 `recall_topics`（主题去重用）。
 
@@ -341,7 +341,11 @@ compose 完成后，**直接输出最终提醒文本**（announce 自动投递�
 
 ## 每周低热量检查
 
-每周一次（周一，第一餐提醒时），运行 `{baseDir}/scripts/weekly-low-cal-check.py`。如果 `below_floor` 为 true，在下一条餐前提醒中加入温和提示。如果 `Health Flags` 包含 `history_of_ed`，完全跳过。用语见 `diet-tracking-analysis` SKILL.md。
+每周一次（周一，第一餐提醒时），运行 `{baseDir}/scripts/weekly-low-cal-check.py`。如果 `below_floor` 为 true，在下一条餐前提醒中加入温和提示。如果 `Health Flags` 包含 `history_of_ed`，完全跳过。
+
+用语示例（择一，不逐字复制）：
+- "这周吃得比目标少一些，今天记得吃够哈～身体撑不住会反弹的。"
+- "看这周热量偏低，别硬扛，正常吃就好。"
 
 ---
 

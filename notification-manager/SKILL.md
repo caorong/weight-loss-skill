@@ -499,7 +499,7 @@ prevents accidental deletion of system jobs when users say "取消提醒".
 
 ### Creating
 
-Use the same `create-cron.py` script with appropriate parameters.
+Use the same `create-reminder.sh` script with appropriate parameters.
 
 > **⚠️ RECALL SUPPRESSION:** All custom reminders are automatically suppressed when
 > the user is in recall stage (engagement_stage ≥ 2). The agent payload MUST include
@@ -514,23 +514,20 @@ Otherwise: <the actual reminder message/task>
 ```
 
 ```bash
-python3 {baseDir}/scripts/create-cron.py \
-  --workspace-dir {workspaceDir} \
+bash {baseDir}/scripts/create-reminder.sh \
+  --agent <your-agent-id> --channel <channel> --type other \
   --name "[custom] 每日笑话" \
   --message "First run: python3 {notification-composer:baseDir}/scripts/pre-send-check.py --workspace-dir {workspaceDir} --meal-type custom --tz-offset {tz_offset}\nIf output is NO_REPLY, stop and output NO_REPLY.\nOtherwise: 给用户讲一个好笑的笑话，风格轻松幽默，每次不同。" \
-  --cron "0 9 * * *" \
-  --type meal
+  --cron "0 9 * * *"
 ```
 
-For one-shot reminders:
+For one-shot reminders (auto-delete after running):
 ```bash
-python3 {baseDir}/scripts/create-cron.py \
-  --workspace-dir {workspaceDir} \
+bash {baseDir}/scripts/create-reminder.sh \
+  --agent <your-agent-id> --channel <channel> \
   --name "[custom] 周五交报告提醒" \
   --message "提醒用户今天要交报告。" \
-  --at "2026-04-11T09:00:00+08:00" \
-  --type meal \
-  --delete-after
+  --at "2026-04-11T09:00:00+08:00"
 ```
 
 ### Canceling

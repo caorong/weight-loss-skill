@@ -84,7 +84,7 @@ Check these sources in order:
 3. **User states it directly** — The user might say "I'm eating 1,800 calories a day" without having used the weight loss planner. Accept it.
 4. **None of the above** — If no calorie target exists, ask: "To build your meal plan, I need to know your daily calorie target. Do you have one from a previous plan, or would you like me to help you calculate it?" If they want calculation, either trigger the weight-loss-planner skill or do a quick TDEE estimate inline (see `references/quick-tdee.md`).
 
-**Calorie and macro ranges** come directly from the weight-loss-planner skill (see `weight-loss-planner/formulas.md` §Daily Macronutrient Targets):
+**Calorie and macro ranges** come directly from the weight-loss-planner skill (see `weight-loss-planner/references/formulas.md` §Daily Macronutrient Targets):
 
 ```
 Calorie range  = totalCal ± 100 kcal
@@ -236,7 +236,7 @@ Each mode defines a **fat percentage range** that determines the macro split. Pr
 Use the planner-calc script to compute macros for the user's diet mode:
 
 ```bash
-python3 {weightLossPlannerDir}/scripts/planner-calc.py macro-targets \
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py macro-targets \
   --weight <kg> --cal <daily_cal> --mode balanced [--meals 3]
 ```
 

@@ -11,12 +11,12 @@ Manage the user's cron jobs: create, list, edit, delete. All scripts enforce age
 
 ## Scripts
 
-All scripts are in `{skillDir}/scripts/`. Always pass `--agent {agentId}` (your own agent ID).
+All scripts are in `{baseDir}/scripts/`. Always pass `--agent {agentId}` (your own agent ID).
 
 ### Create
 
 ```bash
-bash {skillDir}/scripts/create-reminder.sh \
+bash {baseDir}/scripts/create-reminder.sh \
   --agent {agentId} \
   --name "喝水提醒" \
   --message "提醒用户喝水，简短自然一句话" \
@@ -48,7 +48,7 @@ Examples:
 ### List
 
 ```bash
-bash {skillDir}/scripts/list-reminders.sh --agent {agentId}
+bash {baseDir}/scripts/list-reminders.sh --agent {agentId}
 ```
 
 Returns JSON:
@@ -76,7 +76,7 @@ Present to user in friendly format: translate cron expressions to natural langua
 ### Edit
 
 ```bash
-bash {skillDir}/scripts/edit-reminder.sh \
+bash {baseDir}/scripts/edit-reminder.sh \
   --agent {agentId} --job <jobId> \
   [--name "新名字"] [--cron "30 11 * * *"] [--at "..."] \
   [--message "新内容"] [--enable] [--tz "Asia/Shanghai"]
@@ -91,7 +91,7 @@ To edit, you need the job ID. If you don't have it, run list first.
 ### Delete
 
 ```bash
-bash {skillDir}/scripts/delete-reminder.sh --agent {agentId} --job <jobId>
+bash {baseDir}/scripts/delete-reminder.sh --agent {agentId} --job <jobId>
 ```
 
 Permanently removes the job. To find the job ID, run list first.

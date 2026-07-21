@@ -9,16 +9,16 @@ When this skill is used without a prior weight-loss-planner session, and the use
 
 ```bash
 # Get TDEE:
-python3 {weightLossPlannerDir}/scripts/planner-calc.py tdee \
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py tdee \
   --weight <kg> --height <cm> --age <years> --sex male|female \
   --activity sedentary|lightly_active|moderately_active|very_active|extremely_active
 
 # Get calorie target with a deficit:
-python3 {weightLossPlannerDir}/scripts/planner-calc.py calorie-target \
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py calorie-target \
   --tdee <tdee_value> --rate-kg 0.5
 
 # Or do it all at once if you have a target weight:
-python3 {weightLossPlannerDir}/scripts/planner-calc.py forward-calc \
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py forward-calc \
   --weight <kg> --height <cm> --age <years> --sex male|female \
   --activity <level> --target-weight <kg> --mode balanced
 ```
@@ -30,8 +30,8 @@ The script automatically handles BMR (Mifflin-St Jeor), activity multipliers, sa
 ## Unit Conversions
 
 ```bash
-python3 {weightLossPlannerDir}/scripts/planner-calc.py unit-convert --value 170 --from lbs --to kg
-python3 {weightLossPlannerDir}/scripts/planner-calc.py unit-convert --value 65 --from in --to cm
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py unit-convert --value 170 --from lbs --to kg
+python3 {weight-loss-planner:baseDir}/scripts/planner-calc.py unit-convert --value 65 --from in --to cm
 ```
 
 ## When to Recommend the Full Skill Instead
