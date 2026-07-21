@@ -3,16 +3,16 @@ name: expert-intervention
 description: >
   Execute an expert intervention dropped into your workspace as a
   `*-INTERVENTION.md` file (e.g. PLAN-CHANGE-INTERVENTION.md,
-  WEIGHIN-CHECKIN-INTERVENTION.md). Trigger the moment `ls *-INTERVENTION.md`
-  shows ANY such file — at session start AND on every subsequent turn, because a
-  new one can be dropped mid-conversation. The file itself carries its own full
-  lifecycle instructions and is the runtime authority (just do what it says);
-  this skill is the reference companion that writes out the same workflow in
-  full: the two intervention kinds (information-gathering checkin vs plan-change
-  proposal), how to raise them in your own coach voice, the negotiation state
-  machine (agree / refuse / no-response default-accept), the plan-change
-  observation period, what to log to negotiation-history.md, and exactly when to
-  delete the file.
+  WEIGHIN-CHECKIN-INTERVENTION.md). Trigger whenever your prompt carries a
+  "Pending Expert Intervention (auto-injected)" section — the system detects
+  pending files and injects their contents automatically each turn. The file
+  itself carries its own full lifecycle instructions and is the runtime
+  authority (just do what it says); this skill is the reference companion that
+  writes out the same workflow in full: the two intervention kinds
+  (information-gathering checkin vs plan-change proposal), how to raise them in
+  your own coach voice, the negotiation state machine (agree / refuse /
+  no-response default-accept), the plan-change observation period, what to log
+  to negotiation-history.md, and exactly when to delete the file.
 ---
 
 # Expert Intervention
@@ -34,34 +34,34 @@ description: >
 
 ## Routing Gate — when this skill runs
 
-**On EVERY user message** — new session or continuation — you must already have
-checked for intervention files (`ls *-INTERVENTION.md 2>/dev/null`; AGENTS.md
-makes this a per-turn gate). A `*-INTERVENTION.md` file is a **live to-do**, not
-a session-start chore: one can be dropped in mid-conversation.
+Pending interventions arrive **inside your prompt**: the system checks your
+workspace for `*-INTERVENTION.md` every turn and, when one exists, injects a
+"## Pending Expert Intervention (auto-injected)" section carrying the file's
+full contents. You never `ls` or `read` to discover them. A pending
+intervention is a **live to-do**, not a session-start chore: one can be dropped
+in mid-conversation and will appear in your very next turn's prompt.
 
-The moment a file exists:
+When the injected section appears:
 
-1. **READ it THIS turn and act THIS turn — do not defer.** Finding the file is
-   not enough; the filename alone tells you nothing. `read` its full contents and
-   fold the intervention into the reply you are already composing. "At a natural
-   moment" means *this* message, not "next turn".
+1. **Act THIS turn — do not defer.** The contents are already in front of you;
+   fold the intervention into the reply you are already composing. "At a
+   natural moment" means *this* message, not "next turn".
 2. **Handle at most ONE per turn.** Serve the user's current message first, then
-   — in the SAME reply — work that single intervention. If several files exist,
-   pick one (oldest / highest-priority) and leave the rest for later turns. Never
-   dump multiple onto the user at once.
+   — in the SAME reply — work that single intervention. The system injects one
+   file per turn; any others will appear on later turns. Never dump multiple
+   onto the user at once.
 3. **This intervention is the MAIN thread while active.** If the user's message
    relates to it, your wording and pacing follow the intervention. Heavy
    calculation skills may be deferred until it closes —
    note `待补：…` in the 进度 block. Messages unrelated to the intervention go to
    their normal skill as usual (see `SKILL-ROUTING.md`).
 4. **A photo does NOT exempt you.** When the user sends a meal photo, the
-   meal-check-in and the intervention are *equal priority this turn*: in the same
-   batch where you read the check-in files, also `read` the `*-INTERVENTION.md`.
-   After (or alongside) the check-in reply, act on the intervention in the SAME
-   reply. The check-in never discharges the intervention.
+   meal-check-in and the intervention are *equal priority this turn*: after (or
+   alongside) the check-in reply, act on the intervention in the SAME reply.
+   The check-in never discharges the intervention.
 5. **Never delete early.** If a turn gets pulled elsewhere, the file persists —
-   next turn you re-discover it and pull the topic back. When unsure whether it's
-   done, treat it as unfinished and keep the file.
+   it will be injected again next turn and you pull the topic back. When unsure
+   whether it's done, treat it as unfinished and keep the file.
 
 ## Read the file
 
