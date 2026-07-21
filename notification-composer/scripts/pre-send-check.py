@@ -165,13 +165,14 @@ def check_engagement_stage(workspace_dir, meal_type, tz_offset, out=None, no_cla
         if stage >= 3 and meal_type == "weekly_report":
             return False, f"stage={stage} — weekly_report suppressed at stage 3+"
 
-    # Stage 2: only lunch slot, only on days_silent 3 or 5 (Day 3 / Day 5)
+    # Stage 2: only lunch slot, only on days_silent 3 or 5
+    # (SKILL.md 口径: Day 4 = days_silent 3, Day 6 = days_silent 5)
     # Exception: weekly_report allowed through at S2 (user has recent data)
     if stage == 2 and meal_type not in ("weekly_report",):
         if meal_type not in ("lunch", "meal_2"):
             return False, f"stage=2 — only lunch recall allowed, got {meal_type}"
         if days_silent_val not in (3, 5):
-            return False, f"stage=2 — days_silent={days_silent_val}, recall only on day 3/5"
+            return False, f"stage=2 — days_silent={days_silent_val}, recall only on days_silent 3/5"
 
     # Stage 3-4: only lunch slot for recall messages
     if stage in (3, 4):

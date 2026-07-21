@@ -134,7 +134,7 @@ Don't ask all of these as a checklist. Weave them into a natural conversation: "
 
 ## Step 1.5: Collect Diet Preferences (3 Rounds)
 
-After resolving the calorie target and user context, collect the user's dietary preferences through **4 separate rounds** — one question per round, keeping each round focused and conversational. These preferences enable diet mode selection, macro calculation, and personalized meal planning.
+After resolving the calorie target and user context, collect the user's dietary preferences through **3 rounds** — one topic per round, keeping each round focused and conversational. (Round 3's question is asked in the same reply that confirms Round 2 — so it's 3 questions across 2 waits.) These preferences enable diet mode selection, macro calculation, and personalized meal planning.
 
 **Skip any round whose answer is already available** in `health-preferences.md` or `health-profile.md` or from earlier conversation context. Only ask what's missing.
 
@@ -215,6 +215,7 @@ English equivalent:
 - **Diet Mode** → `health-profile.md > Diet Config > Diet Mode`
 - **Meal Schedule** → `health-profile.md > Meal Schedule`
   - `Meals per Day` **must be the integer `2` or `3`** — never a range. If the user gives a range (e.g. "2-3 顿", "两到三顿"), write `3` (assume they log every meal they eat; reminders for days they skip will be suppressed by `pre-send-check` once that meal is absent from the log).
+  - If the user eats **4–5 meals/day**, still write `3`: map their three largest meals to Breakfast/Lunch/Dinner (those get reminders), and treat the extra eating occasions as snacks (加餐) — snacks are logged via check-in as usual but get no reminder cron. Mention this mapping to the user when confirming the schedule.
   - Use standard names (Breakfast/Lunch/Dinner) — never "Meal 1"/"Meal 2".
 - **Food Restrictions** (if newly mentioned) → `health-profile.md > Diet Config > Food Restrictions`
 - **Taste preferences / other preferences** → append to `health-preferences.md` under the appropriate subcategory
@@ -264,7 +265,7 @@ After confirming macros, **always present a Diet Template first** — before gen
 
 ### Why Template First, Not Plan First
 
-Most users don't need a detailed 7-day plan to start eating better. A clear template ("this is roughly what each meal looks like") plus one concrete example is enough to act on immediately. The 7-day plan is a nice-to-have — offer it, but only generate it if the user explicitly asks.
+Most users don't need a detailed 7-day plan to start eating better. A clear template ("this is roughly what each meal looks like") plus one concrete example is enough to act on immediately. The 7-day plan is generated ONLY if the user proactively asks — do not offer it, mention it, or prompt about it (consistent with Step 4/5 below).
 
 ### Selecting the Diet Template by Locale and Meal Prep Preference
 

@@ -1,7 +1,7 @@
 ---
 name: weight-loss-planner
 version: 1.0.0
-description: "Personal nutritionist skill for weight loss goal-setting and milestone planning. Creates personalized Markdown reports with BMI analysis, TDEE-based calorie targets, and phased milestone roadmaps. Use this skill when the user mentions weight loss goals, diet planning, calorie targets, BMI, TDEE, or asks for a weight loss plan. Also trigger when user wants to calculate how long to reach a target weight."
+description: "Personal nutritionist skill for weight loss goal-setting. Creates a single personalized plan with BMI analysis, TDEE-based calorie targets, and an estimated completion date. Use this skill when the user mentions weight loss goals, diet planning, calorie targets, BMI, TDEE, or asks for a weight loss plan. Also trigger when user wants to calculate how long to reach a target weight."
 metadata:
   openclaw:
     emoji: "chart_with_upwards_trend"
@@ -201,7 +201,7 @@ The user may want to:
 - **Slow down** → decrease the rate (recalculate; explain that slower is often more sustainable)
 - **Change the goal weight** → recalculate everything
 
-Each adjustment triggers a recalculation. After recalculating, **re-present the updated plan using the full Plan Presentation format defined in Step 2** (Opening → Body metrics → Safety floor → Plan details → Rate explanation → Follow-up question). Do NOT use abbreviated summaries or comparison tables — always show the complete plan so the user can confirm with full context. Repeat until the user is satisfied. If they push for an unsafe rate, stand firm kindly — health first, always.
+Each adjustment triggers a recalculation. After recalculating, **re-present the updated plan using the full Plan Presentation format defined in Step 2** (Opening → Body metrics [per Path A/B rules] → Plan details → Rate explanation → Follow-up question; safety floor stays omitted, per Step 2). Do NOT use abbreviated summaries or comparison tables — always show the complete plan so the user can confirm with full context. Repeat until the user is satisfied. If they push for an unsafe rate, stand firm kindly — health first, always.
 
 ---
 

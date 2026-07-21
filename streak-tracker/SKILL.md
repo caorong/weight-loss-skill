@@ -83,7 +83,7 @@ python3 {baseDir}/scripts/streak-calc.py celebrate \
 
 When `current_streak >= 2` and `pending_milestone` is null:
 
-- State count as `current_streak - 1` (today's meal not logged yet).
+- State count as `current_streak` directly — when today's meal isn't logged yet, the script already returns the streak as of yesterday (it counts runs ending at today OR yesterday), so no adjustment is needed. (Same rule as notification-composer § 每日连续打卡开场白.)
 - Add a free half about getting to know the user's eating habits. One sentence. Vary daily.
 - Themes: learning their taste, noticing patterns, feeling closer. Always food-related.
 

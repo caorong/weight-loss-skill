@@ -469,7 +469,7 @@ When the user likes a restaurant, suggest similar unvisited ones from the cache 
 
 #### Priority 4: Frequency-aware variety
 
-- If the user has visited the same restaurant > 3 times in the last 7 days, suggest alternatives: "这周已经吃了 3 次沙县了，换个口味？"
+- If the user has visited the same restaurant 3+ times in the last 7 days, suggest alternatives: "这周已经吃了 3 次沙县了，换个口味？"
 - Balance between comfort (returning to favorites) and variety (trying new options)
 
 ### Presenting History Context in Recommendations

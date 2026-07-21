@@ -1,7 +1,7 @@
 ---
 name: notification-manager
 version: 1.0.0
-description: "Cron infrastructure and reminder lifecycle management for the AI weight loss companion. Creates, syncs, and removes meal/weight reminder cron jobs. Manages the engagement lifecycle (Active → Pause → Recall → Silent). Handles adaptive timing, user reminder setting changes, and leave/vacation management. Use this skill when: meal-planner completes onboarding (to bootstrap reminders), user requests reminder setting changes, user wants to pause/resume reminders for a vacation or holiday ('五一不打卡了', '放假暂停提醒', '2号到4号出去玩', 'pause reminders', 'I'm going on vacation'), or another skill needs to verify/fix cron state. Do NOT use for composing reminder content or handling replies — that is notification-composer's job."
+description: "Cron infrastructure and reminder lifecycle management for the AI weight loss companion. Creates, syncs, and removes meal/weight reminder cron jobs. Manages the engagement lifecycle (Active → Recall → Weekly/Monthly Recall → Silent). Handles adaptive timing, user reminder setting changes, and leave/vacation management. Use this skill when: meal-planner completes onboarding (to bootstrap reminders), user requests reminder setting changes, user wants to pause/resume reminders for a vacation or holiday ('五一不打卡了', '放假暂停提醒', '2号到4号出去玩', 'pause reminders', 'I'm going on vacation'), or another skill needs to verify/fix cron state. Do NOT use for composing reminder content or handling replies — that is notification-composer's job."
 metadata:
   openclaw:
     emoji: "bell"
@@ -65,7 +65,7 @@ bash {baseDir}/scripts/create-reminder.sh \
 | `--message` | ✅ | Prompt sent to user when the job fires |
 | `--at` | one of | One-shot: relative time or ISO timestamp |
 | `--cron` | one of | Recurring: 5-field cron expression |
-| `--tz` | ❌ | Timezone for cron (auto-detects from `timezone.json`, fallback: `Asia/Shanghai`) |
+| `--tz` | ❌ | Timezone for cron (auto-detects from `USER.md`, fallback: `Asia/Shanghai`) |
 | `--keep` | ❌ | Don't auto-delete one-shot jobs after running |
 | `--to` | ❌ | Explicit delivery target. Overrides auto-detection. Required for channels other than `slack`/`wechat`/`wecom` |
 | `--type` | ❌ | Job type for anti-burst scheduling: `meal`, `weight`, or `other` (default: `other`). See **Anti-burst scheduling** below |
@@ -355,25 +355,27 @@ first-meal nudge. The composer increments the counter via
 
 ## Lifecycle: Active → Recall → Silent
 
+Day labels vs `days_silent` (composer 口径): **Day N = days_silent N-1**(Day 1 = 用户最后互动当天）。
+
 ```
-Stage 1: ACTIVE — normal reminders
-    │   Day 1: normal reminders, no extra
-    │   Day 2: first meal adds gentle nudge, rest normal
+Stage 1: ACTIVE (days_silent < 3) — normal reminders
+    │   Day 1-2 (ds=0-1): normal reminders, no extra
+    │   Day 3   (ds=2):   first meal adds gentle nudge, rest normal
     │
-    └── 2 full missed days (days_silent=3): zero replies + zero messages
+    └── days_silent reaches 3
            │
-Stage 2: RECALL — stop meal/weight reminders, lunch-only recall
+Stage 2: RECALL (days_silent 3-5) — stop meal/weight reminders, lunch-only recall
     │       Day 4 (ds=3): emotion + content recall (lunch slot)
-    │       Day 4: nothing sent
+    │       Day 5 (ds=4): nothing sent
     │       Day 6 (ds=5): ask if busy, offer to pause (lunch slot)
     │
     ├── User sends any message → back to Stage 1
-    └── days_silent >= 5
+    └── days_silent reaches 6
            │
 Stage 3: WEEKLY RECALL — 1x/week, rotate content types
     │       Week 1: nutrition knowledge
-    │       Week 2: feature update
-    │       Week 3: casual check-in
+    │       Week 2: casual check-in
+    │       Week 3: nutrition knowledge (new angle)
     │       Also stops weekly report
     │
     ├── User sends any message → back to Stage 1
@@ -386,6 +388,8 @@ Stage 4: MONTHLY RECALL — 1x/month, central dispatch (not personal crons)
            │
 Stage 5: SILENT — send nothing. Wait for user to return.
 ```
+
+(Numeric truth: `services/data-api/src/stage.ts resolveStage` — ds<3→S1, ds<6→S2, ds>=6→S3+ by recall counts. Slot/day gating: `notification-composer/scripts/pre-send-check.py`.)
 
 **Activation nudges (special case — never-engaged users):** Two cohorts get a
 capped one-shot nudge instead of (or before) the recall content above:

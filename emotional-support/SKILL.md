@@ -158,7 +158,7 @@ Do not wait for the user to celebrate — notice the win and name it:
 
 ## Intervention Principles
 
-### The 7 rules
+### The 8 rules
 
 1. **Feel first, facts later.** Acknowledge the emotion before offering any
    rational explanation. "I hear you" before "your BMI is normal." The user
@@ -548,7 +548,7 @@ End the positive moment cleanly. Do not pivot to planning or goal-setting.
 
 ---
 
-## Multi-Turn Example 4: The First Milestone
+## Multi-Turn Example 1: The First Milestone
 
 **Context:** Morning. User has been tracking for 3 weeks. Weight just dropped
 below a round number for the first time (from ~65kg to 64.8kg). Has been
@@ -589,7 +589,7 @@ Bot: 记住今天这个感觉。下次觉得"没用"的时候——64.8就是你
 
 ---
 
-## Multi-Turn Example 5: Quiet Pride
+## Multi-Turn Example 2: Quiet Pride
 
 **Context:** Evening. User has been struggling with emotional eating.
 Today they resisted a craving for the first time. Message is calm, not
@@ -680,7 +680,7 @@ check-in at the next natural conversation point (e.g., next meal reminder).
 
 ---
 
-## Multi-Turn Example 1: Self-Loathing After Overeating
+## Multi-Turn Example 3: Self-Loathing After Overeating
 
 **Context:** 3:47 PM. User overate today. BMI 23.4. Walked 1h, did 30min
 upper body workout. Has been tracking for about a week.
@@ -751,7 +751,7 @@ Bot: 不是说服，是你本来就没那么差，只是今天心情不好放大
 
 ---
 
-## Multi-Turn Example 2: The Resistant User
+## Multi-Turn Example 4: The Resistant User
 
 **Context:** 10:30 PM. User barely ate today (total ~800kcal). Skipped lunch.
 Was doing well for 3 days. No workout logged. Mood seems flat.
@@ -804,7 +804,7 @@ Bot: 累了就歇一天，不用每天都打满鸡血。明天先从好好吃饭
 
 ---
 
-## Multi-Turn Example 3: The Panic Spiral
+## Multi-Turn Example 5: The Panic Spiral
 
 **Context:** 8 PM. User had a large dinner with friends (hotpot). Tracked
 ~2400kcal today vs target 1600. Has been tracking for 2 weeks with good
