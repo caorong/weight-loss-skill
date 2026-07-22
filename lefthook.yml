@@ -39,6 +39,39 @@ pre-commit:
 pre-push:
   parallel: true
   commands:
+    # 路由回归(强制):待推 commit 若改了任何 SKILL.md 的 description,
+    # 必须跑父仓 eval:routing(54 case,LLM 判路由 vs golden)通过才能 push。
+    # description 是每请求注入的路由判据,回归会静默改变全船消息分发。
+    # 例外:无 AWS 凭证/找不到父仓时警告放行(LLM 关卡不锁死离线环境)。
+    routing-regression:
+      run: |
+        RANGE="@{push}..HEAD"
+        git rev-parse '@{push}' >/dev/null 2>&1 || RANGE="origin/main..HEAD"
+        CHANGED=$(git diff --name-only $RANGE 2>/dev/null | grep -E '/SKILL\.md$' || true)
+        if [ -z "$CHANGED" ]; then exit 0; fi
+        if ! git diff -U0 $RANGE -- $CHANGED 2>/dev/null | grep -qE '^[+-]description:'; then
+          exit 0
+        fi
+        echo "🔎 检测到 SKILL.md description 变更,运行路由回归 (eval:routing)…"
+        PARENT=""
+        for cand in "$(dirname "$(dirname "$(pwd)")")" "$HOME/backend-service"; do
+          if [ -f "$cand/evals/user-service/runners/routing-runner.ts" ]; then PARENT="$cand"; break; fi
+        done
+        if [ -z "$PARENT" ]; then
+          echo "⚠️  找不到父仓 backend-service,跳过路由回归。请手动在父仓跑: npm run eval:routing"
+          exit 0
+        fi
+        if [ -z "$AWS_ACCESS_KEY_ID" ] && [ ! -f "$HOME/.aws/credentials" ]; then
+          echo "⚠️  无 AWS 凭证,跳过路由回归。请在有凭证的环境跑: npm run eval:routing"
+          exit 0
+        fi
+        cd "$PARENT" && npm run eval:routing
+      fail_text: |
+        ❌ 路由回归失败,禁止 push。
+        description 改动弄丢了触发语义或 NOT 边界——看上方分歧清单。
+        若是 golden 过时(产品行为有意变更):更新父仓
+        evals/user-service/scenarios/skill-routing.yaml 并在 commit message 说明。
+
     # 本仓 pytest:154 case,覆盖每个 skill 的计算/判定纯函数
     # (streak/weight-tracker/planner/nutrition/badge/exercise/trend + onboarding schema)
     skill-tests:
