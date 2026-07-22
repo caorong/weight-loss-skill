@@ -270,24 +270,7 @@ For any turn that outputs the ①② breakdown (create / append / detail-bearing
    - `meal_name`: English meal name from `meal_detection.meal_name` (e.g. `lunch`, `dinner`)
    - `suggestion text`: your ③ suggestion in one line, no pipes (`|`), no angle brackets (`<>`)
 
-**That's it. 2 rounds. The only script you may call is `render-meal-card.cjs` (in Round 2, for any turn that outputs the ①② breakdown — once for a single meal, or once per meal in the 2-meal abort-recovery case). Do NOT call query-day, calibration-lookup, or any other script.**
-
----
-
-## Post-response Suggestion Tag
-
-### Step 0: Welcome Back Check — MOVED
-
-> ⚠️ Welcome back 检测已统一到 **SKILL-ROUTING.md** 全局前置检查。diet-tracking 不再单独处理。
-> 用户发消息时 SKILL-ROUTING 会自动检测回归、发欢迎、清 flag，然后才路由到 diet-tracking。
-
-### Step 1: Recognize & Log
-
-```
-<!--diet_suggestion:{workspaceDir}|<meal_name>|<suggestion text>-->
-```
-
-**Must follow the Response Schemas below.**
+**That's it. 2 rounds. The only script you may call is `render-meal-card.cjs` (in Round 2, for any turn that outputs the ①② breakdown — once for a single meal, or once per meal in the 2-meal abort-recovery case); no other scripts.**
 
 ---
 
@@ -329,7 +312,7 @@ Multiple mappings from one correction = multiple lines. If an alias for the same
 
 ## Skill Routing
 
-P2 (Data Logging) — defer to P0 (safety) and P1 (emotional support). See `SKILL-ROUTING.md`.
+P2 (Data Logging) — when the message also carries strong emotion, emotional support comes first (log after, or briefly alongside).
 
 ---
 
