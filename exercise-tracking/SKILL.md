@@ -1,6 +1,7 @@
 ---
 name: exercise-tracking
-description: "Tracks workouts, estimates calories burned, gives fitness feedback, and provides weekly exercise summaries. Trigger when user logs a workout, describes physical activity, uploads fitness tracker data, or asks for a weekly exercise summary. Trigger phrases include 'I ran...', 'I did...', 'just finished...', 'log my workout', 'went to the gym', 'played basketball', 'walked for...', 'swam...', 'lifted weights' (and equivalents in any language). Even casual mentions of physical activity ('took the stairs', 'biked to work') should trigger this skill. Also trigger when user uploads or pastes data from fitness devices (Apple Watch, Garmin, Strava, etc.) or asks for a weekly exercise summary. When in doubt about whether something is exercise-related, trigger anyway. NOT for exercise plan requests — those go to exercise-planning."
+description: "Logs workouts, estimates calories burned, weekly exercise summaries. Trigger on ANY physical-activity mention — 'I ran...', 'went to the gym', '跳操半小时', even casual ('took the stairs') — and fitness-device data (Apple Watch/Garmin/Strava). When in doubt, trigger. NOT for plan requests → exercise-planning."
+
 ---
 
 # Exercise Tracking

@@ -1,7 +1,8 @@
 ---
 name: personal-data-query
 version: 1.0.0
-description: "Query personal health and diet data. Use when user asks about today's intake, daily progress, calorie summary, or 'how am I doing today'. Trigger phrases: 'how many calories today', 'what did I eat', 'today's progress', '今天吃了多少', '今天还剩多少', '今日进度', '今天怎么样了'. Do NOT trigger for logging food or recording weight — those go to diet-tracking-analysis and weight-tracking respectively."
+description: "Query today's diet data: intake, remaining calories, daily progress. Trigger: '今天吃了多少', '今日进度', '今天还剩多少', 'how many calories today'. NOT for logging food → diet-tracking-analysis; NOT weight recording → weight-tracking; NOT overall trajectory/档案 → diet-profile-card; NOT '周报' → weekly-report."
+
 metadata:
   openclaw:
     emoji: "bar_chart"

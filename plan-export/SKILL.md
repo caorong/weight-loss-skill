@@ -1,7 +1,8 @@
 ---
 name: plan-export
 version: 2.2.0
-description: "Convert Markdown plans to styled HTML web pages (hosted on cloud storage with presigned URLs) or PDFs, and deliver them to users. Supports weight loss plans (PLAN.md) and meal plans (MEAL-PLAN.md) with different HTML templates. Trigger when: (1) weight-loss-planner finishes generating PLAN.md, (2) meal-planner finishes generating MEAL-PLAN.md, (3) any time a Markdown document should be delivered as a professional document to the user, (4) user asks for their plan link and the previous one has expired."
+description: "Renders Markdown plans (PLAN.md / MEAL-PLAN.md / EXERCISE-PLAN.md) to styled HTML pages with presigned URLs, or PDF. Trigger when a planner skill finishes generating a plan, or the user asks for their plan link ('我的计划链接') / the old link expired. Channel whitelist applies — non-listed channels (wechat) get inline text from the calling skill."
+
 metadata:
   openclaw:
     emoji: "page_facing_up"

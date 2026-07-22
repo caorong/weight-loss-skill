@@ -1,6 +1,7 @@
 ---
 name: reminder-manager
-description: "Manage personal reminders and scheduled tasks for the user. Full CRUD: create, list, edit, and delete cron jobs. Trigger when user wants to: create a reminder ('remind me...', '提醒我...', '帮我定个提醒', 'set a reminder', '两分钟后提醒我'), view their reminders ('我有哪些提醒', '看看我的定时任务', 'show my reminders', 'list my reminders'), change a reminder ('把午餐提醒改到12点', '修改提醒时间', 'change my reminder'), or delete/cancel a reminder ('取消喝水提醒', '删掉这个提醒', 'cancel my reminder', 'delete the reminder'). Also trigger for equivalents in any language. This skill handles both user-created custom reminders AND system-created meal/weight reminders — users can view and modify all their own reminders."
+description: "User-requested reminder CRUD — covers both user-created custom reminders AND system meal/weight reminders. Trigger on: create ('提醒我...', '两分钟后提醒我', 'remind me...'), view ('我有哪些提醒'), change ('把午餐提醒改到12点'), delete ('取消喝水提醒', 'cancel my reminder'). Pausing ALL reminders for a period (请假) → leave-manager. System reminder bootstrap at onboarding → notification-manager."
+
 ---
 
 # Reminder Manager

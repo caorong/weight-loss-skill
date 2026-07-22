@@ -1,7 +1,8 @@
 ---
 name: miniprogram-migration-followup
 version: 1.0.0
-description: "Follow-up onboarding for users who migrated from the WeChat miniprogram (小犀牛AI健康) to WeCom. The miniprogram version of onboarding skips the long-term coaching setup (meal schedule, daily reminders, check-in flow introduction) because the miniprogram cannot send cron messages. When such a user adds the WeCom bot and sends their first message, this skill runs a short follow-up to fill those gaps. Trigger when all three conditions hold: (1) workspace has `.from-miniprogram.json`, (2) workspace does NOT have `.migration-followup-completed`, (3) user has just sent a message. Do NOT trigger on every subsequent message."
+description: "Follow-up onboarding for users migrated from the WeChat miniprogram: fills the coaching setup the miniprogram skipped (meal schedule, reminders, check-in intro). Trigger ONLY when workspace has `.from-miniprogram.json` AND lacks `.migration-followup-completed`. One-shot — never on subsequent messages."
+
 metadata:
   openclaw:
     emoji: "arrows_counterclockwise"

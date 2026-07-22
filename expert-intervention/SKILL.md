@@ -1,18 +1,6 @@
 ---
 name: expert-intervention
-description: >
-  Execute an expert intervention dropped into your workspace as a
-  `*-INTERVENTION.md` file (e.g. PLAN-CHANGE-INTERVENTION.md,
-  WEIGHIN-CHECKIN-INTERVENTION.md). Trigger whenever your prompt carries a
-  "Pending Expert Intervention (auto-injected)" section — the system detects
-  pending files and injects their contents automatically each turn. The file
-  itself carries its own full lifecycle instructions and is the runtime
-  authority (just do what it says); this skill is the reference companion that
-  writes out the same workflow in full: the two intervention kinds
-  (information-gathering checkin vs plan-change proposal), how to raise them in
-  your own coach voice, the negotiation state machine (agree / refuse /
-  no-response default-accept), the plan-change observation period, what to log
-  to negotiation-history.md, and exactly when to delete the file.
+description: "Reference companion for expert interventions. Trigger when the prompt carries a 'Pending Expert Intervention (auto-injected)' section — the injected file is the runtime authority; read this skill when you need the full workflow background (intervention kinds, negotiation state machine, logging, file lifecycle)."
 ---
 
 # Expert Intervention

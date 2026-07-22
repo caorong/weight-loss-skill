@@ -1,7 +1,8 @@
 ---
 name: diet-tracking-analysis
 version: 3.2.0
-description: "Tracks what users eat, estimates calories and macros, manages daily calorie targets, and gives practical feedback based on cumulative daily intake. Trigger when user sends a photo, logs food, describes a meal, mentions what they're about to eat or drink, or sets a calorie target. Also trigger for past-tense reports ('I had...', 'I ate...'). Even casual mentions ('grabbing a coffee') should trigger. NOT for general behavioral patterns without specific food (e.g. 'I skip breakfast', '我喝水很少') — defer to habit-builder."
+description: "Tracks food intake: calories, macros, daily targets, cumulative feedback. Trigger on ANY food mention — photos, meal descriptions, past-tense ('I ate...'), about-to-eat, even casual ('grabbing a coffee') — and calorie-target changes. NOT for foodless behavior patterns ('I skip breakfast', '我喝水很少') → habit-builder."
+
 metadata:
   openclaw:
     emoji: "fork_and_knife"

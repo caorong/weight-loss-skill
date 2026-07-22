@@ -1,7 +1,8 @@
 ---
 name: diet-profile-card
 version: 1.0.0
-description: "Send the user's 减脂档案 (diet profile) as a mini-program card when the user asks to see their overall progress, data, or trajectory. Trigger phrases: '减脂档案', '我的档案', '看看我的档案', '看我的数据', '我的数据', '减脂曲线', '体重曲线', '我的进展', '看看进展', 'my profile', 'my progress', 'my data'. The card opens the mini-program dashboard. Do NOT trigger for '今天/今日' single-day queries (those go to personal-data-query) or for '周报/这周/weekly report' (those go to weekly-report)."
+description: "Send the 减脂档案 mini-program card when the user asks for overall progress/data/trajectory: '减脂档案', '我的数据', '减脂曲线', '体重曲线', 'my progress'. NOT for '今天/今日' single-day queries → personal-data-query; NOT '周报/这周' → weekly-report."
+
 metadata:
   openclaw:
     emoji: "chart_with_upwards_trend"

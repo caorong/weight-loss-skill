@@ -1,6 +1,7 @@
 ---
 name: leave-manager
-description: "用户想暂停接收主动提醒/请假/休息一阵时触发——把暂停意图落库到 data/leave.json（系统真源），让 cron 提醒在请假期自动静默、到期自动恢复。这是落库动作，不是口头答应：只共情回复而不调本 skill = 请假没生效，cron 还会继续打扰用户。Trigger whenever the user signals they want to STOP receiving proactive contact for a period, in ANY language and regardless of wording. 明示: '暂停提醒'、'停一周'、'放假不打卡'、'请假'、'别发提醒了'、'pause reminders'、'stop reminding me'. 含蓄(同样必须触发): '过段时间再说'、'两周后再来'、'最近不想减肥'、'别烦我'、'让我休息一阵'、'先不弄了'、'退下吧'、'不用管我了'、'端午/国庆/五一/春节期间不方便'、'这几天聚餐多/应酬多'、'出去玩几天'、'出差一周'、'回来再继续'、'回来了告诉你'. 也触发用于【提前结束请假】当用户表示回来了: '我回来了'、'可以恢复提醒了'、'继续吧'、'I'm back'. 不要为单次的'今天不用提醒了'触发(那是单次跳过,不是请假时段)。"
+description: "Trigger when the user wants to pause proactive reminders for a period. MUST persist to data/leave.json (the system source of truth — cron auto-silences during leave, auto-resumes after); an empathetic reply without calling this skill = the leave never takes effect and cron keeps disturbing the user. Trigger on ANY pause signal regardless of wording. Explicit: '暂停提醒', '请假', 'pause reminders'. Implicit (MUST also trigger): '过段时间再说', '别烦我', '最近不想减肥', '出差一周', '节假日/春节期间不方便', '这几天聚餐多', '出去玩几天'. Also for ending leave early: '我回来了', '继续吧', 'I'm back'. NOT for one-off '今天不用提醒了' (single skip ≠ leave)."
+
 ---
 
 # Leave Manager — 请假 / 暂停提醒

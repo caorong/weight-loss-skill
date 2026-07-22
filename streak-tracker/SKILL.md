@@ -1,27 +1,7 @@
 ---
 name: streak-tracker
 version: 1.0.0
-description: >
-  Calculates consecutive meal-logging streak and returns pending milestone data.
-  Called BY other skills only — not a standalone conversation skill.
-
-  WHEN to call:
-  - notification-composer (Stage 1 only): during meal reminder Generation Flow
-    step 4. If pending_milestone is not null, the milestone celebration becomes
-    the opening line. If current_streak >= 2, use daily streak opening.
-  - weekly-report: include current streak in the weekly summary section.
-  - User explicitly asks about their streak ("what's my streak", etc.).
-
-  WHEN NOT to call:
-  - During recall phase (Stage 2/3/4) — no streak check, no streak mention.
-  - During normal conversation — never proactively bring up streak unless
-    the user asks or a milestone is pending at meal reminder time.
-  - After a streak breaks — say nothing about it.
-
-  DELIVERY: woven into meal reminders by notification-composer as the opening
-  line. This skill never sends messages directly — only provides data.
-
-  Returns: JSON with current_streak, pending_milestone, milestones_celebrated.
+description: "Returns meal-logging streak data (current_streak, pending_milestone) — called BY other skills (notification-composer at Stage-1 meal reminders; weekly-report), never a standalone conversation skill. Only user-triggered case: explicit streak questions ('我连续打卡几天了', 'what's my streak'). Never proactively mention streaks; silence after a break."
 metadata:
   openclaw:
     emoji: "fire"

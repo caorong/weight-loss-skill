@@ -1,7 +1,8 @@
 ---
 name: diet-pattern-detection
 version: 1.0.0
-description: "One-time diet pattern analysis. Runs via daily cron after onboarding, checks if user's actual eating pattern matches a different diet mode. Self-destructs after successful execution. NOT user-triggered — cron-only."
+description: "One-time cron-only skill (never user-triggered): checks if the user's actual eating pattern fits a different diet mode, then self-destructs."
+
 metadata:
   openclaw:
     emoji: "bar_chart"

@@ -1,12 +1,6 @@
 ---
 name: habit-builder
-description: >
-  Designs and manages healthy habits for sustainable weight loss.
-  Atomic Habits / Tiny Habits methodology. Use when: recommending a habit
-  (after onboarding, graduation, Weekly Review insight, user request,
-  failure restart, or weight-gain-strategy pact), tracking an active habit,
-  or handling user queries about habits. Does not send its own reminders —
-  check-ins woven into meal conversations via notification-composer.
+description: "Designs and manages healthy habits (Atomic Habits methodology). Trigger on: foodless behavior self-reports ('我喝水很少', 'I skip breakfast', '我吃饭太快'), habit requests ('我想养成早睡的习惯'), tracking/querying active habits, and right after onboarding completes (recommend the first habit). No own reminders — check-ins woven into meal conversations."
 ---
 
 # Habit Builder

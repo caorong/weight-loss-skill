@@ -1,13 +1,7 @@
 ---
 name: memory-consolidation
 version: 1.0.0
-description: >
-  Three-layer memory system for nutritionist agents. Manages short-term (1-2 day
-  conversation summaries), medium-term (topic-based knowledge, 1 week to 1 month),
-  and long-term (core user profile & milestones, permanent) memory.
-  This skill is NOT triggered by user messages. It is called by the agent internally
-  at appropriate moments: after conversations (short-term update), daily (short→medium
-  consolidation), weekly (medium→long promotion), and monthly (medium-term cleanup).
+description: "Internal memory maintenance — NOT triggered by user messages. Invoked by the agent after conversations and by scheduled consolidation runs (short/medium/long-term promotion and cleanup)."
 ---
 
 # Memory Consolidation

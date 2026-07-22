@@ -1,18 +1,7 @@
 ---
 name: restaurant-meal-finder
 version: 1.1.0
-description: >
-  On-demand restaurant meal recommendation skill. When the user asks "what
-  should I eat?" or wants dining suggestions, this skill first establishes the
-  user's location, searches for nearby restaurants and delivery options, caches
-  them locally, and then recommends specific calorie-appropriate meals from
-  those real restaurants. The restaurant list is persisted so repeat queries
-  don't require re-searching. Use this skill whenever the user asks for
-  restaurant recommendations, what to order when eating out, nearby dining
-  options that fit their diet, or fast-food / takeout / convenience store meal
-  suggestions. This skill complements the meal-planner (which builds restaurant
-  options into weekly plans) by handling real-time, on-the-spot dining decisions
-  grounded in the user's actual nearby options.
+description: "Real-time dining recommendations from real nearby restaurants: what to order when eating out, delivery/takeout/convenience-store picks that fit the user's calories. Trigger: '附近吃什么', '中午外面吃什么好', '想点外卖有什么推荐', 'I'm at a restaurant, what should I order'. Weekly-plan restaurant options → meal-planner."
 metadata:
   openclaw:
     emoji: "chopsticks"

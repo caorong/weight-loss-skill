@@ -1,17 +1,7 @@
 ---
 name: emotional-support
 version: 2.0.0
-description: >
-  Detects and responds to emotions — both negative AND positive — during the
-  weight-loss journey. Trigger when the user expresses body image distress,
-  self-criticism, frustration, guilt about eating, hopelessness about progress,
-  or any emotional pain related to weight, food, or appearance. ALSO trigger
-  when the user shares excitement, pride, milestones, breakthroughs, or any
-  positive feeling about their progress, body, or habits. Also trigger when
-  another skill (notification-composer, diet-tracking, habit-builder, etc.)
-  detects emotional signals and defers here. This skill takes priority over
-  data collection, logging, and meal reminders — emotional presence comes
-  first.
+description: "Trigger on emotional signals, negative AND positive: body-image distress, guilt about eating, hopelessness, self-criticism — or pride, milestones, excitement about progress. Takes priority over ALL logging, data collection, and reminders — when a message carries both data (food/weight/exercise) and emotion, emotional presence comes FIRST; log later or briefly after."
 metadata:
   openclaw:
     emoji: "heart"

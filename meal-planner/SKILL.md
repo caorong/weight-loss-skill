@@ -1,20 +1,7 @@
 ---
 name: meal-planner
 version: 1.0.0
-description: >
-  Personalized meal planning skill that creates sustainable, calorie-controlled weekly
-  meal plans based on a user's weight loss targets and dietary preferences. Supports
-  multiple diet modes including Balanced/Flexible, Low-Carb/Keto, Mediterranean,
-  Intermittent Fasting (16:8, 5:2), High-Protein, and Plant-Based. Use this skill
-  whenever the user asks for meal plans, diet plans, what to eat, food recommendations,
-  weekly menus, macro-based eating plans, or recipe suggestions tied to weight loss goals.
-  Also trigger when the user mentions wanting help with meal prep, portion control,
-  healthy eating habits, or asks "what should I eat to lose weight." This skill builds
-  on top of the weight-loss-planner skill — it expects a daily calorie target and weight
-  loss context to already exist (from a prior plan or USER.md), but can also operate
-  standalone if the user provides their calorie target directly. Adapts foods, units,
-  and restaurant recommendations to the user's country/region, inferred from language
-  or user input.
+description: "Creates calorie-controlled diet templates and weekly meal plans from the user's calorie target and preferences (multiple diet modes). Trigger on: meal/diet plan requests, 'what should I eat to lose weight', '帮我做个饮食计划', meal prep and portion-control help, recipe suggestions tied to weight loss. Requires a calorie target (from PLAN.md or user-stated). On-the-spot restaurant/dining decisions → restaurant-meal-finder."
 metadata:
   openclaw:
     emoji: "fork_and_knife"

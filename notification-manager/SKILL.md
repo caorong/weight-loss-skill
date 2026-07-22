@@ -1,7 +1,8 @@
 ---
 name: notification-manager
 version: 1.0.0
-description: "Cron infrastructure and reminder lifecycle management for the AI weight loss companion. Creates, syncs, and removes meal/weight reminder cron jobs. Manages the engagement lifecycle (Active → Recall → Weekly/Monthly Recall → Silent). Handles adaptive timing, user reminder setting changes, and leave/vacation management. Use this skill when: meal-planner completes onboarding (to bootstrap reminders), user requests reminder setting changes, user wants to pause/resume reminders for a vacation or holiday ('五一不打卡了', '放假暂停提醒', '2号到4号出去玩', 'pause reminders', 'I'm going on vacation'), or another skill needs to verify/fix cron state. Do NOT use for composing reminder content or handling replies — that is notification-composer's job."
+description: "Cron infrastructure and reminder lifecycle (Active → Recall → Weekly/Monthly → Silent). Use when: onboarding completes (bootstrap meal/weight reminder crons), reminder timing/settings change, or another skill needs cron state verified/fixed. Leave/vacation requests → leave-manager. Composing reminder content → notification-composer. User-requested reminder CRUD → reminder-manager."
+
 metadata:
   openclaw:
     emoji: "bell"

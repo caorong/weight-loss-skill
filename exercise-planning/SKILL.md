@@ -1,6 +1,7 @@
 ---
 name: exercise-planning
-description: "Designs personalized exercise/training programs based on goals, experience, and constraints. Trigger when user requests a workout plan, training program, exercise routine, or fitness schedule. Trigger phrases: 'make me a workout', 'design a training plan', 'I want to start working out', 'help me build a program', 'exercise plan', 'gym routine', 'training split', 'I need a fitness program', 'what should I do at the gym', 'how should I train', '帮我制定训练计划', '运动方案' (and equivalents). NOT for logging completed workouts — those go to exercise-tracking."
+description: "Designs personalized training programs. Trigger on workout-plan requests: 'make me a workout', 'gym routine', 'how should I train', 'I want to start working out', '帮我制定训练计划', '运动方案'. NOT for logging completed workouts → exercise-tracking."
+
 ---
 
 # Exercise Planning
