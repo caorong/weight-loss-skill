@@ -11,6 +11,18 @@
 pre-commit:
   parallel: true
   commands:
+    routing-eval-reminder:
+      # SKILL.md frontmatter(description)是每请求注入的路由判据。
+      # 改动后必须跑父仓的 npm run eval:routing(54 case 路由回归,
+      # 场景集 evals/user-service/scenarios/skill-routing.yaml)。提示性,不阻塞。
+      run: |
+        CHANGED=$(git diff --cached --name-only | grep -E '/SKILL\.md$' || true)
+        if [ -z "$CHANGED" ]; then exit 0; fi
+        if git diff --cached -U0 -- $CHANGED | grep -qE '^[+-]description:'; then
+          echo "ℹ️  检测到 SKILL.md description 变更:"
+          git diff --cached -U0 -- $CHANGED | grep -E '^[+-]description:' | cut -c1-100 | sed 's/^/   /'
+          echo "   请确认已在父仓跑过: npm run eval:routing"
+        fi
     secret-detect:
       run: |
         if git diff --cached --diff-filter=ACM -z --name-only | xargs -0 grep -lE '(AKIA[0-9A-Z]{16}|sk-[a-zA-Z0-9]{48}|-----BEGIN (RSA |EC )?PRIVATE KEY|ghp_[a-zA-Z0-9]{36})' 2>/dev/null; then
