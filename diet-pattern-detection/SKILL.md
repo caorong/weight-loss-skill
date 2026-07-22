@@ -1,7 +1,7 @@
 ---
 name: diet-pattern-detection
 version: 1.0.0
-description: "One-time cron-only skill (never user-triggered): checks if the user's actual eating pattern fits a different diet mode, then self-destructs."
+description: "TEST-MARKER One-time cron-only skill (never user-triggered): checks if the user's actual eating pattern fits a different diet mode, then self-destructs."
 
 metadata:
   openclaw:
