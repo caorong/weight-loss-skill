@@ -141,6 +141,22 @@ In ONE tool batch, call ALL of these simultaneously:
 - `meal_checkin({ images: [...], text: "user's text if any", workspace_dir: "{workspaceDir}" })`
 - `read` PLAN.md, health-profile.md, health-preferences.md
 
+When the user's current message contains interleaved text and images whose order carries meaning, use the ordered `content` form instead of separate `text` and `images`. Preserve the incoming block order exactly:
+
+```json
+{
+  "content": [
+    {"type": "image", "image": "<first image path or URL>"},
+    {"type": "text", "text": "This is breakfast"},
+    {"type": "image", "image": "<second image path or URL>"},
+    {"type": "text", "text": "This is lunch"}
+  ],
+  "workspace_dir": "{workspaceDir}"
+}
+```
+
+Do not also pass `text` or `images` when using `content`; `content` is authoritative. For a simple message where all text applies to all images, the backward-compatible `text` + `images` form remains valid.
+
 Do NOT call `image`, `exec`, or any script in Round 1. Everything meal-related goes through `meal_checkin`. (The single permitted `exec` — the card renderer — happens in Round 2, see below.)
 
 ### Round 2: Compose reply
