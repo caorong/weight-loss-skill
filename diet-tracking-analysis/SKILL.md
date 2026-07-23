@@ -196,7 +196,7 @@ Use `meal_checkin` results to compose your reply. The only tool call allowed her
 
 > Whether to render is decided by the 🔒 rule at the top of this section. Below is HOW to render once that condition is met.
 
-For any turn that outputs the ①② breakdown (create / append / detail-bearing correct):
+Once the 🔒 rule says render, follow these steps:
 
 1. **Build the card JSON** from the `meal_checkin` result (no transformation — copy the numbers through):
    ```json
