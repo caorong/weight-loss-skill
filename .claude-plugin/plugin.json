@@ -20,8 +20,6 @@
     "coaching"
   ],
   "skills": [
-    "./SKILL-ROUTING",
-    "./chat-greeting",
     "./diet-tracking-analysis",
     "./emotional-support",
     "./exercise-tracking",

@@ -41,7 +41,7 @@ When the injected section appears:
    relates to it, your wording and pacing follow the intervention. Heavy
    calculation skills may be deferred until it closes —
    note `待补：…` in the 进度 block. Messages unrelated to the intervention go to
-   their normal skill as usual (see `SKILL-ROUTING.md`).
+   their normal skill as usual.
 4. **A photo does NOT exempt you.** When the user sends a meal photo, the
    meal-check-in and the intervention are *equal priority this turn*: after (or
    alongside) the check-in reply, act on the intervention in the SAME reply.

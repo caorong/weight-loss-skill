@@ -107,5 +107,4 @@ Persisted on every `streak-calc.py info` run. Other skills can read directly.
 
 ## Skill Routing
 
-**Priority Tier: P4 (Reporting).** Data utility — doesn't own conversations.
-See `SKILL-ROUTING.md` for conflict resolution.
+Data utility — doesn't own conversations; invoked by other skills, never leads.

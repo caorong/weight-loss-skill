@@ -68,7 +68,7 @@ python3 /home/nanorhino/backend-service/.openclaw-user-service/skills/notificati
 
 > ⚠️ 你输出的任何文本都会送达用户。`NO_REPLY` 是唯一的抑制方式。
 > ⚠️ **当输出包含 `recall` 时，绝对不能写正常的餐食提醒。** 即使 cron prompt 说 "Run notification-composer for breakfast"，你也必须发召回消息。
-> ⚠️ **Welcome back 不由 cron 处理。** 用户回归时的欢迎消息由 SKILL-ROUTING.md 全局前置检查在用户发消息时直接触发，不走 cron 路径。
+> ⚠️ **Welcome back 不由 cron 处理。** 用户回归时,lifecycle-stage 插件在其下一条消息注入 `welcome_back: TRUE` 指令,主对话直接响应,不走 cron 路径。
 
 ### 第四步：按阶段分支
 
@@ -373,12 +373,6 @@ compose 完成后，**直接输出最终提醒文本**（announce 自动投递�
 - 餐食/推荐：`{baseDir}/scripts/meal-history.py`
 - 连续打卡：`{streak-tracker:baseDir}/scripts/streak-calc.py`
 - 互动阶段（stage）：lifecycle API（DB 唯一真源）。读取方式 = 直接用每轮注入的 `## User Lifecycle` 段，或 `pre-send-check.py` 输出的 `stage=N`。不再用 `check-stage.py`（已废弃）。
-
----
-
-## 技能路由
-
-**优先级 P4（报告层）。** 完整冲突解决见 `SKILL-ROUTING.md`。
 
 ---
 

@@ -40,7 +40,7 @@ Check whether these files exist in the workspace. If they do, read them for requ
 
 If both files together provide all required fields, **skip manual collection entirely** and proceed directly to calculating TDEE internally (see below).
 
-If files exist but are incomplete (e.g., have height and weight but no activity level), use what's there and ask only for the missing pieces. **Single-ask rule:** each missing-data question is asked at most once. If the user doesn't answer, use a sensible default (e.g., lightly active for activity level) and move on. See `SKILL-ROUTING.md > Single-Ask Rule`.
+If files exist but are incomplete (e.g., have height and weight but no activity level), use what's there and ask only for the missing pieces. **Single-ask rule:** each missing-data question is asked at most once. If the user doesn't answer, use a sensible default (e.g., lightly active for activity level) and move on.
 
 #### Path B: No profile files (standalone mode)
 

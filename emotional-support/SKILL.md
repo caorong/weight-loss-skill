@@ -905,9 +905,9 @@ moments: "还记得上次你破65的时候吗？那个感觉是真的。"
 This skill is a **cross-cutting concern** — it does not replace other skills
 but takes temporary priority when emotional signals are detected.
 
-**See `SKILL-ROUTING.md` for the full conflict resolution system.** This skill
-is **Priority Tier P0 (Safety)** for escalation signals and **P1 (Emotional)**
-for all other emotional signals. It overrides all lower-tier skills (P2-P5).
+For escalation signals this skill is the highest priority in the system; for
+all other emotional signals it outranks every logging, planning, and reporting
+skill.
 
 ### How other skills should integrate
 
@@ -915,8 +915,10 @@ for all other emotional signals. It overrides all lower-tier skills (P2-P5).
    (see Signal Categories above)
 2. **Defer:** When signals are detected, pause the current skill's workflow
    (logging, reminders, habit check-ins) and follow this skill's conversation
-   flow. See `SKILL-ROUTING.md` Pattern 2 for specific merge/defer rules
-   when data logging and emotional signals co-occur.
+   flow. When data logging and emotional signals co-occur: negative emotion →
+   acknowledge first, do NOT log in the first reply; positive → celebrate first,
+   then log briefly in the same response; mild positive note during a log →
+   log normally with one warm sentence.
 3. **Resume:** After the emotional moment passes (user signals readiness),
    the original skill can gently resume — but do not force it.
    `"No rush. Whenever you feel like logging, I'm here."` rather than
@@ -938,7 +940,8 @@ When this skill is active:
 
 When a user message combines a positive emotion with a data log (e.g.,
 "I ran 5K! So proud!"), this skill celebrates first, then the data-logging
-skill logs briefly in the same response. See `SKILL-ROUTING.md` Pattern 2B.
+skill logs briefly in the same response — celebration first (2-3 sentences),
+then a one-line log confirmation.
 
 ---
 

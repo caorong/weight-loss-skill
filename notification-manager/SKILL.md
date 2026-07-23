@@ -456,7 +456,7 @@ During recall stages, `pre-send-check.py` claims the day's recall slot by postin
 **When a silent user returns:**
 Stage auto-resets to 1 (lifecycle API, on the returning inbound). Resume normal
 reminders. The warm welcome message itself is composed by `notification-composer`
-(triggered by SKILL-ROUTING's Welcome Back Check reading the injected `## User Lifecycle`).
+(triggered by the lifecycle-stage plugin injecting `welcome_back: TRUE` into the main conversation).
 
 ---
 
@@ -642,7 +642,6 @@ python3 {notification-composer:baseDir}/scripts/tips-optout.py \
 
 ## Skill Routing
 
-**See `SKILL-ROUTING.md` for the full conflict resolution system.** This skill
-is **Priority Tier P4 (Reporting)**. It handles the orchestration side of
+This skill handles the orchestration side of
 reminders — cron management, lifecycle, and settings. The execution side
 (composing messages, handling replies) is handled by `notification-composer`.

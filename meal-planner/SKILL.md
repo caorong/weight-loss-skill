@@ -123,7 +123,7 @@ After resolving the calorie target and user context, collect the user's dietary 
 
 **Skip any round whose answer is already available** in `health-preferences.md` or `health-profile.md` or from earlier conversation context. Only ask what's missing.
 
-**Single-ask rule:** Each round's question is asked at most once. If the user ignores a question or skips it, accept the silence — use a sensible default (e.g., Balanced for diet mode, 3 meals for schedule) and move on. Do not repeat or rephrase the question. See `SKILL-ROUTING.md > Single-Ask Rule`.
+**Single-ask rule:** Each round's question is asked at most once. If the user ignores a question or skips it, accept the silence — use a sensible default (e.g., Balanced for diet mode, 3 meals for schedule) and move on. Do not repeat or rephrase the question.
 
 ### Round 1: Diet Mode
 
