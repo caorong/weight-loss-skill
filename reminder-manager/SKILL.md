@@ -8,8 +8,6 @@ description: "User-requested reminder CRUD — covers both user-created custom r
 
 Manage the user's cron jobs: create, list, edit, delete. All scripts enforce agent-level isolation — a user can only see and modify their own jobs.
 
-> ⚠️ **SILENT OPERATION:** Do not narrate tool calls or internal steps. Just do it and present the result.
-
 ## Scripts
 
 All scripts are in `{baseDir}/scripts/`. Always pass `--agent {agentId}` (your own agent ID).

@@ -10,8 +10,6 @@ metadata:
 
 # Emotional Support
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions, skill transitions, or tool calls to the user. No "Let me check...", "Now I'll transition to...", "Reading your profile...". Just do it silently and respond with the result.
-
 
 The emotional backbone of the weight-loss coaching system. When a user is
 hurting, every other skill pauses and this one leads. No logging, no tips,

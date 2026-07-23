@@ -10,8 +10,6 @@ metadata:
 
 # Streak Tracker
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions or tool calls.
-
 ## Philosophy
 
 1. **Celebrate presence, never punish absence.** Streak alive → amplify. Breaks → say nothing.

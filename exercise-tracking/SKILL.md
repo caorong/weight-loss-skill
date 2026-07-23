@@ -6,8 +6,6 @@ description: "Logs workouts, estimates calories burned, weekly exercise summarie
 
 # Exercise Tracking
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions, skill transitions, or tool calls to the user.
-
 ## Hard Rules
 
 - **⚠️ MUST save before replying.** When the user reports completed exercise (any physical activity they did), you MUST call `exercise-calc.py save` to persist the data BEFORE composing your reply. A turn that acknowledges exercise without saving is a failed turn. No exceptions.

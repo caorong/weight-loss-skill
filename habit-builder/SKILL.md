@@ -5,8 +5,6 @@ description: "Designs and manages healthy habits (Atomic Habits methodology). Tr
 
 # Habit Builder
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions or tool calls.
-
 > 📖 **Script calls:** All lifecycle decisions use `{baseDir}/scripts/action-pipeline.py`. See `references/script-reference.md` for full command syntax.
 
 ## Routing Gate

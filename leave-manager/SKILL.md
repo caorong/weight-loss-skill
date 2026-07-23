@@ -8,8 +8,6 @@ description: "Trigger when the user wants to pause proactive reminders for a per
 
 把用户的"暂停一段时间被动联系"意图**落库**到 `data/leave.json`（系统真源），并同步生命周期 `frozen` 状态。请假期间 cron 提醒由 pre-send-check 自动静默（job 原样保留、照常触发、被拦下不发），到期由 lifecycle reactor 自动解冻恢复——**全程不碰 cron job 本身**。
 
-> ⚠️ **SILENT OPERATION：** 不要向用户叙述内部动作/工具调用。默默执行，只输出给用户看的话。
-
 > 🚫 **绝不 disable / 删除 / 修改任何 cron job 来实现暂停。** 暂停只做一件事——写 `leave.json`。
 > 动 cron（`edit-reminder.sh --disable` 等）会破坏用户提醒配置且请假结束恢复不回来 = 错误行为。
 

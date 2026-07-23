@@ -11,7 +11,6 @@ metadata:
 
 # Weight Tracking
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions, skill transitions, or tool calls to the user. Just do it silently and respond with the result.
 >
 > Do NOT re-read this SKILL.md if it's already in context from a prior turn.
 

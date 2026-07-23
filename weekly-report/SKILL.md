@@ -7,8 +7,6 @@ description: generate personalized weekly progress reports for Nano Rhino users.
 
 > 🚨 **OUTPUT CONTRACT: Every execution MUST produce a clickable report URL. A text-only summary without a URL = FAILED. If scripts fail, report the error — do NOT fall back to plain-text.**
 
-> ⚠️ **SILENT OPERATION:** Never narrate internal actions to the user. Just do it and respond with the result.
-
 > 🚨 **ALL reports are data-only. `generate-report-html.py` produces a JSON payload and PUTs it to data-api (MySQL `weekly_reports`). Dashboard reads DB, SSR-injects, and Vue SPA renders it. WRITING HTML YOURSELF IS FORBIDDEN.**
 
 ---

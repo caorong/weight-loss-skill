@@ -11,8 +11,6 @@ metadata:
 
 # Miniprogram Migration Follow-up
 
-> ⚠️ **SILENT OPERATION.** Never narrate internal actions, skill transitions, or tool calls. No "Let me check...", "Now I'll transition to...", "Reading your profile...". Just do it.
-
 ## What this skill is for
 
 Users who tried 小犀牛AI健康 (the WeChat miniprogram) go through a **lightweight onboarding** there — they answered body/activity/diet questions, received a plan, and saw a diet template. But the miniprogram cannot deliver scheduled messages, so these parts of the standard onboarding were **skipped**:

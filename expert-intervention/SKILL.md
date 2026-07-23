@@ -11,7 +11,6 @@ description: "Reference companion for expert interventions. Trigger when the pro
 > this skill ever differ, **the file wins** (it's generated per-case and may be
 > newer).
 
-> ⚠️ **SILENT OPERATION:** Never mention this skill, the intervention file, its
 > existence, "the system suggested", "回访脚本", "方案变更", "干预", or that anyone
 > else was involved. Everything reads as your own coaching, in your own voice.
 > See AGENTS.md `## System Confidentiality`.
