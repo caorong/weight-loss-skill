@@ -157,7 +157,7 @@ When the user's current message contains interleaved text and images whose order
 
 Do not also pass `text` or `images` when using `content`; `content` is authoritative. For a simple message where all text applies to all images, the backward-compatible `text` + `images` form remains valid.
 
-Do NOT call `image`, `exec`, or any script in Round 1. Everything meal-related goes through `meal_checkin`. (The single permitted `exec` — the card renderer — happens in Round 2, see below.)
+Do NOT call `image`, `exec`, or any script in Round 1 — everything meal-related goes through `meal_checkin`. (The card-renderer `exec` belongs to Round 2.)
 
 ### Round 2: Compose reply
 
@@ -165,7 +165,7 @@ Do NOT call `image`, `exec`, or any script in Round 1. Everything meal-related g
 > **The decision is purely these two fields — never your judgment.** `create` / `append` / `correct` are treated identically. A tiny `correct` (e.g. 280g → 127g) still re-renders. No matter how busy this turn is (pre-meal `eaten:false` advice / lecturing / clarifying / append confirmation), render the card FIRST. **No card = turn FAILED.**
 > Only skip the card when this turn outputs NO ①② breakdown — pure `delete`, or a bare confirmation with no `dishes`/`evaluation` → plain text.
 
-Use `meal_checkin` results to compose your reply. The only tool call allowed here is the **one** `exec` to render the meal card (see "Round 2 output flow" below); `meal_checkin` already saved the meal and returned evaluation.
+Use `meal_checkin` results to compose your reply — it already saved the meal and returned the evaluation. (Tool budget here: Hard Rules' single card-render `exec` only.)
 
 > **What the plugin already computed (do NOT re-derive):**
 > - `daily_total` (incl. `daily_total.target`, `calories`, `progress_pct`, `remaining`) — final cumulative numbers. `daily_total.target` is the user's current calorie goal as of this call; always read it from here.
@@ -190,7 +190,7 @@ Use `meal_checkin` results to compose your reply. The only tool call allowed her
 - Render each meal's card to its own timestamped PNG.
 - Reply body: emit BOTH `MEDIA:<PNG路径>` lines (one per card) followed by `[[order_media_first]]`, then the text. The text carries only ③ suggestion (once, based on final daily totals) + bridging comment + clarification + missing_meals — **do NOT** write ①/② as text (they're in the cards).
 - Add one `<!--diet_suggestion-->` tag per meal.
-- If any meal's render fails (exec non-zero): degrade that case to the plain-text ①②③ fallback for ALL meals (don't mix one card + one text).
+- Any render fails → the standard degrade rule (output flow step 4) applies to ALL meals — never mix one card + one text.
 
 #### Round 2 output flow
 
@@ -270,7 +270,7 @@ Once the 🔒 rule says render, follow these steps:
    - `meal_name`: English meal name from `meal_detection.meal_name` (e.g. `lunch`, `dinner`)
    - `suggestion text`: your ③ suggestion in one line, no pipes (`|`), no angle brackets (`<>`)
 
-**That's it. 2 rounds. The only script you may call is `render-meal-card.cjs` (in Round 2, for any turn that outputs the ①② breakdown — once for a single meal, or once per meal in the 2-meal abort-recovery case); no other scripts.**
+**That's it. 2 rounds.** (Script budget: see Hard Rules — one `render-meal-card.cjs` call, or one per meal in the abort-recovery case.)
 
 ---
 
