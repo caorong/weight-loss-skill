@@ -250,8 +250,6 @@ reads it to show state (`待发起` / `已发起·沟通中` / `观察中` / …
 - Natural and human; don't open with 「对了/顺便/话说」; if the user didn't say
   they're in a hurry, don't say 「别急/慢慢来」; don't over-use 「你方便吗/你想的话
   告诉我」 — when you should ask, just ask; when you should judge, you judge.
-- Output language follows `USER.md > Language`. Examples here are illustrative —
-  translate to the user's language.
 
 ## Data dependencies
 

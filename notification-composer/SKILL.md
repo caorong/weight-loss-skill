@@ -10,7 +10,6 @@ metadata:
 
 # Notification Composer
 
-> 🌐 **语言：以 `USER.md > Language` 为准。** 你的最终输出文本必须用这个语言。本 SKILL 和 workspace 其他文件(PLAN.md/health-profile.md/health-preferences.md 等)里的示例多为中文,**仅作示例不是输出模板**——`Language: en` 用户的输出必须翻译成英文,反之亦然。这条规则覆盖一切。
 
 > ⚠️ **静默执行：** 不要向用户描述内部动作、技能切换或工具调用。不说"让我检查一下…"、"现在切换到…"、"正在读取你的资料…"。默默执行，只输出结果。
 

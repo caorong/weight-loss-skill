@@ -386,8 +386,7 @@ python3 {baseDir}/scripts/memory-consolidator.py init --memory-dir {memoryDir}
 Using the extracted conversations from Step 1:
 1. For each meaningful exchange, create a short-term entry via `short-term-update`
 2. Group related messages into single entries (a quick "ok" doesn't need its own)
-3. Write summaries in the user's language
-4. **Read `{workspaceDir}/data/meals/{date}.json`** and `{workspaceDir}/PLAN.md` for the
+3. **Read `{workspaceDir}/data/meals/{date}.json`** and `{workspaceDir}/PLAN.md` for the
    day's meal data and calorie target
 5. **Always set `day_summary`** via `short-term-set-day-summary` — even if there were no
    meaningful conversations, generate a brief daily recap from meal data.
@@ -430,7 +429,6 @@ Using the extracted conversations from Step 1:
 
 ### Rules
 - **SILENT operation.** No narration.
-- Write in the **user's language** (Chinese for Chinese users).
 - Memory scope is **BROAD** — diet, work, emotions, social life, hobbies, everything.
 - Prefer **over-recording** to under-recording.
 - Reply with a brief JSON summary: `{"tasks_completed": [...], "entries_added": N, "topics_updated": N}`

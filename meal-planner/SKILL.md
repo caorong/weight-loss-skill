@@ -183,7 +183,7 @@ English equivalent:
 
 > Got it, I'll remind you 15 minutes before each meal to help you plan ahead.
 
-Then ask Round 3 in the same reply (adapt to the user's language):
+Then ask Round 3 in the same reply:
 
 > 有什么不能吃的食物吗？口味上有什么偏好？（完全可选——只是帮我做出更合你胃口的饮食模板。）
 
