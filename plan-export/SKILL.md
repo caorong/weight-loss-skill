@@ -158,11 +158,6 @@ bash {baseDir}/scripts/upload-to-s3.sh \
   [--base-url <url>]
 ```
 
-### Send file to Slack only (legacy)
-```bash
-bash {baseDir}/scripts/send-to-slack.sh --agent <id> --file <path> [--message <text>] [--filename <name>]
-```
-
 ## Notes
 
 - Weight loss plan HTML: blue theme, tables, Inter + Noto Sans SC fonts

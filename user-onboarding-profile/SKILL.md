@@ -10,9 +10,6 @@ metadata:
 
 # 用户引导与画像构建
 
-> ⚠️ **静默执行：** 永远不要向用户叙述内部动作、技能切换或工具调用。不要说"我来查一下..."、"现在切换到..."、"读取你的画像..."。静默执行，只用结果回应。
-
-
 ## 理念
 
 这是对话，不是问卷。保持轻松、快节奏。每条回复 **最多不超过 2 个问题**。如果用户回答很短，没关系——接受并继续。绝不重复用户已经回答过的问题（哪怕只是简短回答）。
@@ -298,7 +295,7 @@ BMI 在引导期（Round 4）已展示——**跳过身体指标块**。直接�
 PLAN.md 保存好之后，**立刻**跑：
 
 ```bash
-python3 {onboarding:baseDir}/scripts/onboarding-finalize.py \
+python3 {baseDir}/scripts/onboarding-finalize.py \
   --workspace {workspaceDir} \
   --weight-value <weight_number> --weight-unit <kg|lb> \
   --tz-offset <来自 USER.md>
