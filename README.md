@@ -1,142 +1,226 @@
-# Weight Loss Skill — standalone native-vision edition
+# Weight Loss Skill — 本地减肥教练（standalone v5）
 
-本 fork 的第一版目标：**用 OpenClaw 现有视觉模型记餐，把饮食账本可靠地存在本地。**
-无需额外营养 API、MCP、数据库服务、`meal_checkin` 插件或作者的后台。
+> **GitHub v5 提交版本：** 本次改动基于已合并 PR #1 的 `main`（`af51bc2`），新分支为 `feat/local-coach-v5`。
+> 安装 AI 应使用该分支或对应提交的源码，先读取 `AI-INSTALL.md`。只有本次 PR 合并后，主分支才包含 v5。
+> 133 项独立版测试已重新通过；真实 OpenClaw／手机图片／原生提醒投递仍需在实际环境分层验收。
 
-> 当前只适配了独立饮食记录入口。原仓库其余教练、提醒、小程序、周报发布等模块仍保留，
-> **不代表它们已经兼容独立 OpenClaw**。请使用下面的轻量安装器，不要全量安装旧技能包。
-> 本地账本不等于本地模型：照片仍由你配置的视觉模型处理，相关费用和隐私政策照常适用。
+本 fork 的目标是：**现有视觉模型负责理解，Python 负责真实记录；资料、计划、每日记录和复盘使用同一套本地数据。**
+不搬迁原作者的 SaaS 运营系统，不接缺失的 meal_checkin 插件，不需要营养 API、MCP、MySQL、S3 或微信小程序后台。
 
-## 可以先用什么
+只安装一个入口 `diet-tracking-analysis`，它现在包含本地教练的完整基础流程。
+原仓库其他技能目录保持原样，**不要因为功能同名而一起装回**。
+本地账本不等于本地模型：照片仍交给你配置的视觉模型，费用与隐私条款照常适用。
 
-- 照片或文字记餐：明确打卡时直接记录估算，不必每次确认。
-- 新增、追加、改单项、按比例改份量、删食物/整餐。
-- 当天/任意日期/最近七天已记录摄入汇总；没有减肥计划也可以记录。
-- 同请求重试去重、并发锁、修改前备份、写入中断恢复。
-- 沿用 `data/meals/YYYY-MM-DD.json` 数组，保留原有营养字段。
-- 文字回复，不依赖图片卡片、浏览器或远程报告链接。
+## 能做什么
 
-不包含：专业营养数据库查询、可靠的视觉称重、完整训练计划重构、自动热量目标调整、
-提醒/召回/小程序接入。模型给出的份量和营养是估算，不是测量或医疗建议。
+| 流程 | 实现方式 |
+|---|---|
+| 资料和偏好 | 明确提供的数据存到本地健康 Markdown；保留无关旧内容；更新有版本检查 |
+| 照片/文字记餐 | 原生视觉估算 + 本地 meal-log.py；支持追加、局部纠正、删除、汇总 |
+| 体重/运动记录 | coach.py 保存真实报告、纠正和删除；未提供的运动消耗不当成 0 |
+| 减肥目标/食谱/训练计划 | 现有模型生成文字草稿；确认后持久化；按生效日期选择版本 |
+| 本地综合复盘 | 联合读取饮食、体重、运动和当时目标，保存 Markdown 和结构化快照 |
+| 计划调整 | 复盘可自动提出草稿；**确认后才生效**，不自动降低热量或加大训练 |
+| 提醒/定时复盘 | 本地配置 + 原生 OpenClaw scheduler 工具；明确同意后设置，默认无任务 |
+
+提醒代码负责生成配置、比较网关现状、核验注册和发送前 gate；AI 用实际原生工具执行任务操作。
+**保存提醒配置 ≠ 已注册定时任务 ≠ 手机收到消息。** 三个状态分开验收。
+本仓库测试不向真实手机发送消息，不在你的 OpenClaw 自动创建任务。
 
 ## 交给 AI 安装
 
-**让安装 AI 先读 [AI-INSTALL.md](AI-INSTALL.md)。** 根目录 `AGENTS.md` 也指向它。
-安装 AI 负责解析真实 workspace、准备 uv/Python、执行安装、自检并检查 OpenClaw 加载。
-不要只复制文件就报告成功，也不要把原仓库全部技能一次装入。
+直接给安装 AI：
 
-可直接发给 AI：
+> 请安装 caorong/weight-loss-skill 的 feat/local-coach-v5 分支；使用该分支的 v5 源码。
+> 先读 AI-INSTALL.md，使用 uv 安装独立本地教练入口，验证资料/饮食/体重/运动/计划/复盘和技能加载。
+> 不全量安装上游技能，不覆盖我已有档案，不关闭沙箱。提醒默认关闭；需要时再用原生 scheduler 设置并核验。
+> 真实图片传递、模型生成效果或提醒投递未测试时，分别标明未验证。
 
-> 请安装 caorong/weight-loss-skill 的 feat/standalone-native-vision 分支。
-> 先读取 AI-INSTALL.md，按文档使用 uv 安装到我实际使用的 OpenClaw Agent workspace，
-> 完成脚本和加载验收。不要覆盖个人档案、启用旧后台或修改全局安全策略；
-> 图片链路未实测时明确标记待验证。
-
-## uv 运行环境
-
-默认使用 **uv >= 0.10.0 + Python 3.13 系列**；兼容底线 Python 3.10。
-仍为零第三方依赖，uv 主要统一 Python 选择、环境隔离、锁文件和执行入口。
-`pyproject.toml`、`uv.lock`、`.python-version` 放在技能目录，随安装复制；
-不会把上游后台/PDF/浏览器依赖安装进来。不发布 PyPI 包，不使用 `uvx`。
-
-macOS/Linux/WSL 和系统时区数据库仍然必需；uv 不会自动解决 OpenClaw 工具权限、
-图片传递或容器挂载。首次准备解释器可能需要网络；日常账本命令使用离线模式。
-uv 离线不代表照片处理完全本地，模型仍按你自己的配置运行。
-
-供安装 AI 使用的命令（先解析真实 workspace；不要照抄示例路径）：
+默认 **uv >= 0.10.0 + Python 3.13 系列**；解释器代码底线 3.10，第三方 Python 依赖仍为零。
+平台：macOS/Linux/WSL + 系统时区数据库；POSIX 本地可写持久化 workspace。
+uv、Python 和保存路径必须在 Agent 的真实 exec 环境里可访问，不能只在另一个终端能用。
 
 ```bash
-git clone --branch feat/standalone-native-vision https://github.com/caorong/weight-loss-skill.git
+# 获取 v5 分支（本次 PR 合并前不要用旧 main）。
+git clone --branch feat/local-coach-v5 https://github.com/caorong/weight-loss-skill.git
 cd weight-loss-skill
 
+# 以下路径必须由安装 AI 查询实际 Agent 配置后替换。
 uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
   --workspace "/actual/agent/workspace" --timezone Asia/Tokyo --dry-run
 uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
   --workspace "/actual/agent/workspace" --timezone Asia/Tokyo
 ```
 
-workspace 必须存在，Python 3.13 须先准备好；详细环境探测见 AI-INSTALL.md。
-默认 `--runner uv`，缺 uv 时明确失败；`--runner python` 仅为明确授权的零依赖备用方案。
-安装器只携带独立模块、项目清单和自检脚本，不覆盖 USER/PLAN/AGENTS/体重数据，
-不创建提醒。已有同名技能须显式 `--replace`，先备份，失败回滚。
-
-安装器在 `<workspace>/skills/diet-tracking-analysis/.venv` 新建独立环境，不复用
-临时克隆的 `.venv`。`runtime.json` 保存实际命令前缀和 workspace/备用时区；
-USER.md 的时区优先。日常调用使用已安装目录，例如：
-
-```bash
-uv run --locked --offline --no-python-downloads --project "/actual/installed/skill" \
-  python "/actual/installed/skill/scripts/meal-log.py" summary \
-  --workspace "/actual/agent/workspace" --tz Asia/Tokyo
-```
-
-不需要激活 venv，不混用 pip，不在记餐时更新依赖。更换机器/容器路径后重新安装。
-不要设置 UV_PROJECT_ENVIRONMENT/UV_WORKING_DIR 指向其他项目。维护新增依赖时，
-在开发环境使用 `uv add --project diet-tracking-analysis <package>` 并提交两个清单，
-不在用户记餐会话里安装任意包。
-
-安装器自动运行七项临时数据冒烟检查，输出可机器读取的 JSON；
-`openclaw_discovery` 和 `model_vision` 初始仍为 `not_tested`，由安装 AI 在实际渠道验收。
-既有全局旧技能/cron 不会自动被停用，建议专用 Agent，避免旧写入器冲突。
-不要为了让技能运行关闭沙箱。
-
-记录/纠正/汇总 JSON 契约见
-[diet-tracking-analysis/references/standalone-flow.md](diet-tracking-analysis/references/standalone-flow.md)。
-
-## 存储与可靠性边界
+已有同名入口需明确授权后加 `--replace`：先备份，捕获安装失败后回滚。
+只复制经过适配的脚本/说明/uv 清单，不复制旧后台或临时源码的 .venv。
+安装器在最终技能目录创建 .venv，并把两类命令写进 runtime.json：
 
 ```text
-<workspace>/data/
-├── meals/YYYY-MM-DD.json       # 权威饮食记录，兼容旧 list 结构
-├── meals/backups/<date>/*.json # 修改前原文件字节
-├── meal-ledger-state.json      # 请求回执 + 单笔 pending 恢复日志
-└── .meal-ledger.lock           # POSIX 互斥锁
+commands.meals   → meal-log.py（饮食）
+commands.coach   → coach.py（资料、体重、运动、计划、复盘、提醒配置）
 ```
 
-脚本生成餐次/食物 ID、时间戳和 revision；按食物明细计算总量。缺记录的日子不算成
-“摄入 0”，平均值标为“有记录日的已记录摄入平均”，不声称饮食记录一定完整。
-每日目标只有用户确认后显式传入，脚本不会改计划。
+日常命令使用 `uv run --locked --offline --no-python-downloads`，不需要激活 venv。
+不临时 pip、不在记餐时更换模型或安装包。`--runner python` 是显式授权的零依赖备用，不自动降级。
+更换机器/容器路径后重新安装；不要移动 .venv。仓库源码可以删，安装环境不依赖它。
 
-同一个 request_id + 同一输入会返回旧回执，不再写一次。不同输入重复使用 ID 会报错。
-修改/删除也支持去重；删除后重放旧新增请求不会让餐次复活。旧回执不一定反映最新状态，
-Agent 在 duplicate=true 后应查询最新汇总。没有渠道稳定消息 ID 时只能保障保留 token
-的工具重试，无法保证遗失上下文后整个渠道重投递仍然 exactly-once。
+安装器运行两组临时数据冒烟自检，不污染真实健康记录。
+它不会自动停用既有全局技能/旧 cron；安装 AI 须检查冲突，按授权处理。
+建议使用专用 Agent。`USER.md` / `AGENTS.md` / 网关配置不会被安装器覆盖。
 
-一个事务日志协调日文件和回执：中断后下次调用先恢复，再继续。若 pending 期间发现
-外部改动，会报冲突，不覆盖。只保障使用本脚本和同一锁的写入；NFS、任意外部编辑器、
-未适配旧脚本不在并发保证范围内。文件 0600，拒绝账本路径中的符号链接。
+## 本地数据地图：什么记录在哪里，谁说了算
 
-**删除不是安全擦除：** 备份与请求回执仍含历史数据，而且不会自动清理。需要清理时先
-停止 Agent、确认无 pending 事务并做好私有备份。不要将 data/、照片、请求 JSON 提交
-到公共仓库。灾难恢复应整体备份 data/，而不是只备份每天的 JSON。
+所有路径相对于实际 Agent workspace，不是源代码仓库。
 
-## 开发与测试
+| 文件/目录 | 内容与权威性 | 如何更新 |
+|---|---|---|
+| `USER.md` | OpenClaw 身份/语言/时区等原有上下文 | 本技能不覆盖；时区优先读它 |
+| `health-profile.md` | 身高、年龄、目标体重、健康限制等；标记块内为结构化权威资料 | `profile-set` 只改管理块；保留其他内容 |
+| `health-preferences.md` | 过敏、喜好、烹饪条件、时间约束、常见份量等 | `preferences-set`，先读版本、合并列表 |
+| `data/meals/YYYY-MM-DD.json` | 当地日期的**已食用**记录数组，食物来源、份量来源、ID、revision | `meal-log.py` 是唯一写入器 |
+| `data/weight.json` | 体重读数，统一 kg；实测日期、时间精度、空腹标记、ID、revision | `weight-add/update/delete` |
+| `data/exercise.json` | 日期 → 已完成运动数组；时长、可选总消耗/净消耗、来源 | `exercise-add/update/delete` |
+| `data/plans.json` | 目标/食谱/训练计划的草稿、确认版本、生效日期、来源复盘 | **计划权威数据源**；`plan-save/plan-activate` |
+| `PLAN.md` | 确认过的目标计划可读投影 | 自动更新管理块；不是另一套目标源 |
+| `MEAL-PLAN.md` | 确认过的食谱可读投影 | 同上，无网站发布 |
+| `EXERCISE-PLAN.md` | 确认过的训练计划可读投影 | 同上，无 S3/卡片 |
+| `data/coach-reviews.json` | 每次复盘的数据快照、模型分析、版本 ID | `review-save`；同周期可保存多个版本 |
+| `data/reports/coach-review-START-END.md` | 该日期区间最新可读复盘 | 本地 Markdown，直接文字回复也可 |
+| `data/coach-reminders.json` | 想要的提醒设置、暂停状态、核验过的原生 job ID/hash | 配置/注册/送达分开处理 |
+| `data/requests/*.json` | 每个操作独立的短期输入文件 | 使用新 context 返回的唯一路径；失败待重试时保留 |
+| `data/meal-ledger-state.json` | 饮食请求回执和中断恢复 journal | 仅 meal-log.py 维护 |
+| `data/coach-state.json` | 其他教练操作的请求回执和多文件恢复 journal | 仅 coach.py 维护 |
+| `data/meals/backups/` | 饮食修改/删除前的副本 | 自动保存，不自动清理 |
+| `data/coach-backups/` | 资料、体重、运动、计划等修改前副本 | 自动保存，不自动清理 |
+| `data/skill-backups/` | 显式升级技能前的旧代码副本 | 安装器维护，可能包含旧 .venv |
+
+### Markdown 与 JSON 不会互相抢“真相”
+
+资料是人类可读的 Markdown，但管理块中的每一行是确定格式的 JSON 值：
+
+```text
+<!-- standalone-coach:profile:begin -->
+## Local coach profile
+- height_cm: 170
+- revision: 1
+<!-- standalone-coach:profile:end -->
+```
+
+以上仅格式示例，不会预写你的身高。实际脚本还记录 updated_at。
+AI 不手动改这个块，用相应命令更新；块外原有内容保留。遇到冲突旧文本先核对，不当作没看到。
+
+计划以 `data/plans.json` 为准，三个 Markdown 是可读投影。
+查询“当前计划”必须按 **已确认 + effective_date ≤ 查询日期** 选择，不能只读文件末尾。
+未来计划今天确认不代表今天生效。同日多个确认版本按序选择最新。
+修改计划不重写历史目标；复盘每一天使用那一天有效的版本。
+
+体重保留原 ISO 时间键布局：未提供实际称重时刻时，键只是当天的唯一存储锚点，
+`observed_at=null`、`time_precision=day`；**不意味着你凌晨称过体重**。
+每次真实报告都保留，纠正必须指向 ID，不再按“30 分钟内”自动覆盖。
+
+运动热量缺失是 null；已知总热量的合计有 `calories_complete` 标记。
+复盘单独统计已知净消耗和未知消耗的次数，绝不把运动消耗自动换成“还能再吃多少”。
+
+## 日常完整流程
+
+```text
+保存资料/偏好
+   ↓
+模型生成目标/食谱/训练草稿 → 用户确认 → 按生效日启用
+   ↓
+照片/文字饮食 + 实际体重 + 已完成运动 → 分别真实落盘
+   ↓
+手动或经同意的定时复盘 → 读取本地快照、保存文字分析
+   ↓
+可提出计划调整草稿 → 再次确认后生效
+```
+
+没有建档也能记餐；没有体重也能记录运动时长；不知道热量不会伪造一个 0。
+一条消息有饮食/体重/运动时，每个领域独立请求 ID 和回执。某项失败只报告那项失败，
+重试不能把其他已经成功的记录重复新增。它们不是跨领域的一笔全局原子事务。
+
+现有模型负责识图、建议和计划正文；Python 不偷偷重复调用模型。
+照片份量和营养是估算。用户称重/清晰包装标签优先；不把菜单、想吃、整桌共享菜当成实际摄入。
+
+## 跨天和“多读数据再过滤”
+
+跨天错误来自把昨天获取的“今天”继续用来写入，不是历史数据读得不够多。
+现在要求 **每个新的操作重新运行 context**，按 IANA 时区取 now/today/yesterday/week 区间。
+`today` / `yesterday` 写入在脚本首次执行时解析；明确补记传指定 ISO 日期。
+重试保留原请求 ID 和原输入，跨过零点也不会把已记录的昨天数据再写一份到今天。
+如果可信渠道时间戳表明原消息延迟，应按原消息当地日期解析“今天”，而不是猜。
+
+查询同样重新确定窗口再按记录日期过滤：last7 包含今天，这一天可能不完整；
+this-week 是本周一至今，last-week 是上个完整周。筛选负责选数据，不能修复写错的归属日。
+
+## 手机单人使用与临时文件
+
+单手机、顺序聊天时共享临时文件冲突概率较低，但重试/排队/定时复盘仍可能重叠。
+不引入队列或新服务：context 直接返回每操作唯一的 `data/requests/<token>.json`。
+这是很小的文件命名防护，不是重新设计并发架构。收到成功回执后可清理对应输入文件。
+
+账本继续用文件锁、原子替换和 write-ahead journal。
+重复同一请求返回旧回执，不代表当前状态：AI 要再查当前累计/计划。
+没有稳定渠道 message ID 时，仅保证保留 token 的工具重试，不保证上下文丢失后的完整渠道去重。
+
+## 提醒和定时复盘：只有原生 OpenClaw
+
+AI 按 `references/native-reminders.md` 操作：
+
+1. 经用户同意，保存明确的时间/星期/Agent/channel/to。
+2. 读取完整原生任务列表，用 reminder-sync-plan 生成差异。
+3. 用实际原生 scheduler 工具添加或更新，重新读取任务并 reminder-bind 核实。
+4. 触发时重新读本地状态和时间，检查暂停、停用、是否已记录、是否超时，再输出文字。
+
+不写原作者模型 ARN，不读进程密钥，不访问 lifecycle/data-api。
+计划生成和建档都不会偷偷开启提醒。配置保存失败、工具不可用、收件人不明不能声称已设置。
+停用本地配置会立刻阻止 gate 发送；仍需同步原生任务 enabled=false。
+暂停期内保留的原生任务可能继续调用模型但不发消息，不承诺节省调用费。
+触发超过配置时间 60 分钟会跳过，避免断线重试把提醒拖到深夜或次日。
+
+默认支持单个已明确解析的渠道账户/会话。若渠道要求额外 accountId/thread 字段，
+必须扩展路由并在现场验证；不丢弃字段或猜收件人。实际投递状态以网关为准。
+
+## 数据维护、备份、升级
+
+**日常：** 通过脚本/AI 查询、纠正、删除，不直接编辑 JSON。旧格式损坏/管理块异常会停止，
+不静默清空。备份和回执是恢复链的一部分。文件默认 0600，本地目录应只供本人访问。
+
+**备份：** 暂停这个教练的写入与定时操作，确认没有正在执行或待恢复事务，然后私密备份
+健康 Markdown、三个计划 Markdown 和整个 `data/`。一起保存，不只复制当天的 meal 文件。
+备份应放在自己的加密/访问受控存储；不要提交公开 GitHub。无需备份 .venv。
+
+**恢复：** 停止相关操作后把同一备份集一起恢复，再用 AI 安装器重建运行环境并测试。
+不要混用不同时间点的 ledger、state 和 plan registry；pending 冲突须核对修复，不删除 state 蒙混过关。
+
+**删除与保留期：** 删除当前餐/体重/运动不会清除旧备份、回执、复盘快照。
+这些文件会随时间增长。没有自动清理，避免破坏重试/恢复保证；彻底清理要用户授权，
+在停写、无 pending 时制定保留策略。删除回执会弱化旧请求去重；不承诺安全擦除。
+
+**升级：** 在源码中更新脚本和锁文件，重跑测试，再显式 --replace；数据在 workspace/data，
+不在技能目录内。安装器只替换代码，不重置健康资料。旧全局技能/任务不会被自动停用。
+不要让上游旧写入器和本实现同时管理相同文件，它们不共享锁。
+
+限制：本地 POSIX 文件系统；NFS/多人共享写入/同用户恶意进程不在安全保证范围。
+不要为运行技能而关闭沙箱。旧的未适配模块仍不是本地教练依赖。
+
+## 测试与验收
 
 ```bash
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_meal_log.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_coach.py' -v
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_standalone_install.py' -v
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_uv_install.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_coach_integration.py' -v
 ```
 
-仅运行这三个独立测试集；上游其他测试可能依赖其部署环境，不把它们计作本版通过项。
-自动测试覆盖 CRUD/来源字段/兼容旧 list、时区与补记、目标可选、非法数据、重试冲突、
-并发重复/非重复写、写前备份、两类中断恢复、外部编辑冲突、符号链接和安装不覆盖档案。
-图片准确率、真实模型/渠道、OpenClaw 权限和沙箱必须在实际设备上做端到端验收。
+这些是独立版回归测试；原仓库遗留测试不代表新入口的支持范围。
+测试全部用合成数据/临时 workspace；native job 列表为模拟数据，未注册实际任务。
+真实 OpenClaw 加载、图片传递、模型规划效果、手机提醒投递必须由安装 AI 分别验收。
 
-## 与上游的关系
-
-Based on [NanoRhino/weight-loss-skill](https://github.com/NanoRhino/weight-loss-skill), MIT.
-保留原作者版权与 LICENSE。本 fork 的独立饮食模块替代缺失插件的调用链，但没有将
-整个上游产品后端移植过来。原 `nutrition-calc.py` 及其旧 CLI 不在独立安装清单中，
-新账本不调用它，因此其历史 CLI 缺陷不会阻塞本版；不要将它当作已修好的写入入口。
-
-旧 `scripts/package.sh` / `.claude-plugin/plugin.json` 面向上游流程，**不是本版本的
-推荐安装/打包方式**。不要按旧文档安装 NanoRhino 的 ClawHub 包来覆盖本 fork。
-
-官方集成参考（2026-10-13 核对）：
-- [OpenClaw skills](https://docs.openclaw.ai/tools/skills)
-- [Native media understanding](https://docs.openclaw.ai/nodes/media-understanding)
+接口详见安装后随附的 standalone-flow.md、coach-api.md、coach-flows.md、native-reminders.md。
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT；保留原作者 Link Heart Limited (NanoRhino) 的版权声明，见 LICENSE。

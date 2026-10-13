@@ -1,7 +1,11 @@
 # AI 安装与验收入口
 
+**当前 GitHub v5 分支：** `feat/local-coach-v5`，基于已合并 PR #1 的 `main`（`af51bc2`）。
+先确认 checkout 含 `diet-tracking-analysis/scripts/coach.py`、`diet-tracking-analysis/references/coach-api.md` 且技能版本为 5.0.0。
+本次 PR 合并前，旧 `main` / `feat/standalone-native-vision` 不代表 v5；不要拿旧版替代。
+
 适用：用户委托你把本 fork 的独立饮食记录技能安装到其 OpenClaw。
-先阅读本文件、README、安装器及技能说明，再执行。这里只安装现有视觉模型 + 本地账本，
+先阅读本文件、README、安装器及技能说明，再执行。只安装一个独立入口，包含现有视觉模型 + 本地资料/饮食/体重/运动/计划/复盘/提醒配置，
 不是移植上游全部减肥服务。无需用户手工复制文件、激活 venv 或配置新的模型密钥。
 
 ## 1. 解析真实环境，不猜路径
@@ -43,8 +47,8 @@ uv python install 3.13
 
 ## 3. 安装
 
-在仓库检出目录执行。使用用户选定的分支/提交（当前轻量版在
-`feat/standalone-native-vision`，不是旧 main）。将 workspace 和时区替换为步骤 1 的真实值：
+在 `feat/local-coach-v5` 分支的源码目录执行，也可使用相同版本的安装包。
+本次 PR 合并前不要用旧 main 替代 v5。将 workspace 和时区替换为步骤 1 的真实值：
 
 ```bash
 uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
@@ -65,11 +69,12 @@ uv run --locked --project diet-tracking-analysis python scripts/install-standalo
 
 ## 4. 验收分层，禁止混淆
 
-安装器已自动做临时工作目录中的新增、重试去重、份量纠正、跨进程读取、删除和汇总测试，
+安装器已自动做临时工作目录中的饮食 CRUD/重试测试，以及资料、偏好、体重、运动、三类计划确认和本地复盘测试，
 并检查真实 workspace 可写。虚构测试餐次只存在临时目录，不进入用户账本。
 
-接着在 Agent 实际 exec 环境读取已安装的 `runtime.json`，用其中 `command` 数组作为
-argv 前缀，追加 `list` / `summary`、`--workspace`、`--tz`，确认能运行。
+接着在 Agent 实际 exec 环境读取已安装的 `runtime.json`，用其中 `commands.meals` / `commands.coach` 数组作为
+argv 前缀，分别执行 list/summary 和 context/measurements/plans/review，带真实 --workspace/--tz。
+旧 runtime 没有 commands.coach 必须升级。若实际旧数据格式不支持，先告知并迁移；不清空。
 不要根据安装机器的另一个 Python 路径自行重写命令。无需 `source .venv/bin/activate`。
 
 按本地 OpenClaw 的技能检查/会话能力确认 `diet-tracking-analysis` 已加载且 exec 被授权。
@@ -81,16 +86,31 @@ argv 前缀，追加 `list` / `summary`、`--workspace`、`--tz`，确认能运�
 成功后新会话可查询。勿创建新模型密钥或在 Python 中重复调用图片 API。
 
 最终向用户报告：源码版本、目标 Agent/workspace、runner、安装结果、脚本自检结果、
-OpenClaw 加载状态和视觉状态；明确哪些已验证、哪些尚待实际环境验证。
+OpenClaw 加载状态、视觉状态、模型计划生成状态、原生 scheduler 可用/注册/投递状态；明确哪些已验证、哪些尚待实际环境验证。
 不输出健康记录明细或密钥作为“证明”。
 
-## 5. 日常使用
+## 5. 原生提醒验收（默认不创建）
+
+先读安装后 references/native-reminders.md。只在用户明确请求了时间/星期/投递对象后，
+保存本地设置，用实际原生 scheduler 列出完整任务、reconcile、执行差异、读回核实再 bind。
+不猜工具参数，不把本地配置成功当成网关注册成功；不为了运行而装回旧提醒技能。
+没有用户授权的新任务时保持零任务，报告 scheduler=available 或 not_tested，不发送测试消息。
+实际手机投递需单独授权和现场测试。工具缺失/权限不足则明确报告，不安装作者后台。
+若频道需要多个 accountId/thread 路由，当前单路由模式不足；扩展后验证，不能忽略这些坐标。
+新提醒 payload 不覆写 Agent 模型；输出只走 announce，不能再调 message/curl 重复投递。
+验证停用/暂停 gate，配置变更后重新核验网关任务。不要清空其他 Agent 的任务。
+
+## 6. 日常使用
 
 安装后的 `SKILL.md` 和 `references/standalone-flow.md` 是操作契约：
 - 明确照片/文字打卡 -> 原生模型估算 -> JSON -> meal-log.py 保存 -> 根据真实回执回复。
 - 纠正先查 ID，只改指定项；份量变化用 scale，不重算其他菜。
 - 重试复用 request_id 和输入；有记录日平均不等于实际全部摄入平均。
-- 不激活原来的 meal_checkin、强制卡片、后台周报、自动提醒或运营召回。
+- 不激活原来的 meal_checkin、强制卡片、后台周报或运营召回。
+- 每个新操作重新 context 取日期；补记用指定日期；重试不换原日期/ID。
+- 使用 context 的唯一 request_file；一手机也不共享固定输入文件。
+- 资料/偏好用 coach.py 更新；体重/运动必须收到真实保存回执。
+- 计划本地草稿→明确确认→按生效日启用；复盘建议不自动改目标。
 - 环境坏了就修安装，不临时 pip、换解释器、移除锁定参数或手改账本。
 
 官方参考：

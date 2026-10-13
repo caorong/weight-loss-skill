@@ -58,7 +58,7 @@ class UvInstallTests(unittest.TestCase):
         cfg = self.config()
         lock = (self.base / "uv.lock").read_bytes()
         project = self.base / "pyproject.toml"
-        project.write_text(project.read_text().replace('version = "4.1.0"', 'version = "4.1.1"'))
+        project.write_text(project.read_text().replace('version = "5.0.0"', 'version = "5.0.1"'))
         result = self.invoke(cfg)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual((self.base / "uv.lock").read_bytes(), lock)

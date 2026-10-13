@@ -28,7 +28,12 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         base = self.ws / "skills/diet-tracking-analysis"
         files = sorted(str(p.relative_to(base)) for p in base.rglob("*") if p.is_file())
-        self.assertEqual(files, [".python-version", "SKILL.md", "pyproject.toml", "references/standalone-flow.md", "runtime.json", "scripts/meal-log.py", "scripts/self-test.py", "uv.lock"])
+        self.assertEqual(files, sorted([".python-version", "SKILL.md", "pyproject.toml", "references/standalone-flow.md",
+              "references/coach-api.md", "references/coach-flows.md", "references/native-reminders.md", "runtime.json",
+              "scripts/meal-log.py", "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py", "scripts/self-test.py", "uv.lock"]))
+        config = json.loads((base / "runtime.json").read_text())
+        self.assertEqual(config["schema_version"], 3)
+        self.assertIn("coach", config["commands"])
         config = json.loads((base / "runtime.json").read_text())
         self.assertEqual(config["workspace"], str(self.ws))
         self.assertEqual(config["timezone_fallback"], "Asia/Tokyo")
