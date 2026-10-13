@@ -45,7 +45,8 @@ another operation could read it. Keep failed/pending input for the exact retry.
 
 ## Route by intent, not just one keyword
 
-- Clear food check-in -> native model vision/text -> meal script -> real receipt.
+- Food check-in or reply to a pending food question -> identity gate below ->
+  native model vision/text -> meal script only once resolved -> real receipt.
 - Profile or preference update -> profile-set/preferences-set with revision.
 - Actual weight/completed exercise -> weight/exercise operations in coach.py.
 - Goal/menu/workout plan -> draft locally, show text, confirm, then activate.
@@ -70,8 +71,38 @@ nutrition source and portion source separately. User-weighed amounts and readabl
 package labels override guesses. Nutrients in JSON describe the ENTERED quantity,
 not 100g. Check g versus ml, cooked versus raw, and whether oil is already included.
 Unknown is not zero. Only consumed meals are saved; advice, menus and future plans
-are not actual intake. A shared table is not one person's meal. Only ask to clarify
-bare ambiguous photos; clear check-ins need no repetitive confirmation.
+are not actual intake. A shared table is not one person's meal.
+
+### Food identity confirmation takes priority
+
+**食物身份不确定时先询问，不受打卡免确认规则影响。**
+Food identity uncertainty MUST trigger clarification before assigning that food
+calories or writing intake, even after "record lunch" or in an established
+check-in conversation. No repetitive confirmation means do not ask "shall I
+record this?" again; it NEVER means guessing an unidentified food.
+Read the food identity gate in references/standalone-flow.md before food handling.
+
+- Distinguish identity, portion and intent. If you cannot identify an item, or
+  plausible identities would materially change nutrition, ask one short, specific
+  question identifying its position/appearance. Offer candidate names only when
+  actually supported by the image; do not invent alternatives or numeric certainty.
+- Known food but uncertain grams/oil/recipe: use a clearly labelled reasonable
+  estimate without asking about every item. Ask about amount eaten when no useful
+  portion estimate is possible; do not confuse portion uncertainty with identity.
+- While identity is unresolved, hold the whole meal by default. You may describe
+  recognized items, but do not claim a complete meal total, save guessed/zero
+  placeholder foods, or say "recorded". If the user explicitly asks to save only
+  known items, label it incomplete and retain the resulting meal/food IDs; later
+  append only newly clarified items, never duplicate the known part.
+- Keep the original eating date, meal intent, known items and pending question in
+  conversation context. A short answer such as "red-braised eggplant" resolves
+  that pending item, not a new meal. Merge it with the original evidence, then
+  save once using the original eating date. Never reuse an already committed
+  request ID for a changed payload. Uncertainty remaining -> ask, do not guess.
+- No answer means no complete record; do not auto-finalize after a timeout. There
+  is no durable pending-meal store in this release: if context is lost or several
+  meals could match the answer, ask for the original meal/photo/date rather than
+  claiming automatic recovery. The ledger cannot detect confident misidentification.
 
 Only meal-log.py writes data/meals. Read IDs/revision before correction; portion
 changes use scale on the specific item, not a new estimate of all dishes. Sum

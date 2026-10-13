@@ -5,6 +5,22 @@ Do not activate similarly named upstream skills. Read coach-api.md for contracts
 The existing agent model handles language, visual interpretation and plan writing;
 Python handles records, calculations, version selection and local verification.
 
+## Food check-ins and pending clarification
+
+Before estimating or saving food, apply SKILL.md's food identity gate and
+references/standalone-flow.md. Identity uncertainty overrides check-in auto-save;
+"record lunch" is not permission to invent the dish. Ask a short identity question
+and hold the whole meal by default, rather than saving unknown foods as zero.
+Ordinary portion uncertainty for identified food can use a labelled estimate.
+
+When the next message is a reply to the pending question, merge the answer with
+the original meal and intent before routing it as a new check-in or preference.
+Use the original eating date (including a reply after midnight), not the fresh
+context's today for this pending meal. Save once after resolution; if known items
+were already saved at the user's request, append only the missing item by ID.
+An unanswered question stays unresolved. If pending context was lost, ask for
+the original meal/photo/date; there is no persistent pending-meal registry.
+
 ## First use / profile update
 
 1. Get fresh `context`, then read existing USER.md and health Markdown, if any.
@@ -82,8 +98,9 @@ or a calorie deficit solely from these averages. It does not automatically subtr
 exercise from food calories. Known net burn and unknown sessions remain distinct.
 
 Daily weight uses median of fasting readings if supplied; otherwise median of all
-readings. This is descriptive smoothing, not diagnosis. Two-week mean change needs
-at least three recorded days in each block; missing evidence yields null. The
+readings. This is descriptive smoothing, not diagnosis. Two-week mean change compares only the seven dates ending at the report end
+with the immediately preceding seven dates (end-13..end-7), even in a longer
+review. It needs at least three recorded days in EACH of those blocks; missing evidence yields null. The
 review_readiness flag is a software heuristic, NOT a clinical threshold.
 
 Write a short interpretation of data limitations, repeatable habits and feasible

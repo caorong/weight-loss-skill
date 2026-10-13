@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "purpose": "Manual/live-model acceptance cases for the food-identity gate; not executed by offline contract tests.",
+  "cases": [
+    {
+      "id": "explicit_checkin_unknown_identity",
+      "user": "记录午餐。〔饭菜照片〕",
+      "observation": "Rice and vegetables recognizable; the dark dish on the right cannot be identified.",
+      "expect": "Ask what the dark dish is. Hold the whole meal; do not claim a complete total or saved record.",
+      "forbid": ["Invent a dish name", "Use zero nutrients for the unknown dish", "Treat record lunch as identity confirmation"]
+    },
+    {
+      "id": "materially_ambiguous_identity",
+      "user": "这是我刚吃的，帮我记一下。",
+      "observation": "A visible item plausibly looks like tofu or pork; nutrition would differ materially.",
+      "expect": "Ask a specific identity question with those supported alternatives, not a generic permission-to-log question.",
+      "forbid": ["Automatically choose one alternative", "Present a model confidence score as calibrated"]
+    },
+    {
+      "id": "known_food_estimated_portion",
+      "user": "记录午餐。",
+      "observation": "The foods are identified; grams and cooking oil can only be reasonably estimated.",
+      "expect": "Use labelled portion/recipe assumptions and record through the ledger. Do not re-confirm every known food.",
+      "forbid": ["Ask whether to record again", "Claim measured grams or database lookup"]
+    },
+    {
+      "id": "unusable_image",
+      "user": "帮我看看这餐热量。",
+      "observation": "Attachment cannot be viewed even with the actual available image tool.",
+      "expect": "Ask for a readable photo or food description; do not invent visual evidence.",
+      "forbid": ["Pretend to see the image", "Write any intake record from an unseen image"]
+    },
+    {
+      "id": "clarification_same_meal",
+      "user": "红烧茄子，吃了半盘。",
+      "observation": "This answers the previous lunch question; rice and greens were already recognized but nothing was saved.",
+      "expect": "Combine the reply with the pending lunch; estimate the resolved dish and save that complete lunch once.",
+      "forbid": ["Log eggplant as a separate new meal", "Drop the already recognized rice and greens"]
+    },
+    {
+      "id": "clarification_after_midnight",
+      "user": "是豆腐。",
+      "observation": "Reply at 00:05 local time to an identity question about yesterday's 23:55 meal; original eating date is known.",
+      "expect": "Refresh context, but save the resolved meal against the original ISO eating date, not the reply date.",
+      "forbid": ["Replace eating date with fresh today", "Reuse a committed request ID for changed payload"]
+    },
+    {
+      "id": "calorie_advice_not_checkin",
+      "user": "能吃这个吗，大概多少热量？",
+      "observation": "This is advice, not a check-in. One visible food cannot be identified.",
+      "expect": "Ask its identity before estimating its calories. Answer the advice request after clarification without logging intake.",
+      "forbid": ["Treat clarification as consent to log", "Write a future or hypothetical meal"]
+    },
+    {
+      "id": "explicit_partial_then_append",
+      "user": "先把看得清的记上，另一道等会告诉你。",
+      "observation": "One dish is unresolved; the user explicitly requests partial recording.",
+      "expect": "Save known items only, mark incomplete and retain IDs. Later append just the clarified missing dish to the same meal.",
+      "forbid": ["Claim the subtotal is the entire meal total", "Add the complete meal again later", "Insert zero placeholders"]
+    },
+    {
+      "id": "no_answer_no_autofinalize",
+      "user": "〔用户未回答或转移话题〕",
+      "observation": "A food identity question remains unanswered.",
+      "expect": "Keep the meal unresolved and unlogged by default. Do not force an answer or silently finalize it.",
+      "forbid": ["Timeout into guessed intake", "State the complete meal was saved"]
+    },
+    {
+      "id": "lost_context_or_multiple_pending",
+      "user": "是山药。",
+      "observation": "The original pending photo/date is no longer available, or several meals could match.",
+      "expect": "Ask which original meal/photo/date this answers. Do not promise durable pending-state recovery.",
+      "forbid": ["Attach the reply to an arbitrary meal", "Guess yesterday versus today", "Invent missing photo content"]
+    }
+  ]
+}

@@ -54,6 +54,77 @@ health fixtures or photos in the Git repository.
 "${RUN[@]}" add --workspace "$WORKSPACE" --tz "$TZ" --input "$REQUEST_FILE"
 ```
 
+## Food identity gate before calorie estimation or writes
+
+**Identity clarification overrides check-in auto-save.** A user's instruction to
+record lunch confirms intent, not the identity of every visible item. This gate
+also applies to calorie-only questions: do not assign an unidentified food a
+confident number just because no storage was requested.
+
+Three independent questions:
+- Identity: what food is it? Unrecognized or materially ambiguous -> MUST ask.
+- Portion: how much was eaten? Known food with a usable estimate -> label the
+  assumption and proceed; ask only when there is no useful basis for quantity.
+- Intent: consumed check-in, advice or plan? Clarifying a name does not turn advice
+  or a future meal into consumed intake. Keep the original intent.
+
+Ask a targeted question such as "The dark dish on the right is unclear; what is
+it?" Ask about the user's share if necessary. A supported alternative can be
+"Is that tofu or pork?" Do not manufacture candidates, use a percentage threshold
+as calibrated confidence, or ask "confirm recording?" instead of the food question.
+Readable labels and explicit user corrections take precedence over an image guess.
+
+### Waiting and resuming
+
+Default: no meal write while any food identity remains unresolved. Do NOT use
+`add`/`append`/`update` as a place to hold unknown foods. The ledger accepts only
+consumed foods with numeric nutrients, not pending dishes. Unknown is not zero;
+do not invent a dish or copy another dish's macros just to satisfy validation.
+Recognized items may be described, but no whole-meal calorie total is complete
+until all items relevant to the user's meal are resolved. Say what is still
+unidentified and that this meal has not yet been recorded.
+
+Keep this pending context in the conversation (not in a second health ledger):
+original eating date and meal type, original logging/advice intent, recognized
+items/portions, unknown item locations/questions, and any IDs already committed.
+At the next reply, obtain fresh context/time as usual, then resolve the answer
+against THIS pending meal. A reply containing only a dish name is a clarification,
+not automatically another meal, a new preference, or a new food-only check-in.
+
+After resolution, combine the earlier evidence and the user's answer, estimate
+only the unresolved/corrected item, and submit the complete meal once. Use the
+original resolved ISO eating date even if the clarification arrives after
+midnight; the reply date is not the eating date. Allocate a new mutation request
+ID when forming new input. Only transport retries reuse the exact submitted
+request ID and payload; never reuse a committed ID for changed content. Query
+existing rows if a previous save may have succeeded before a turn was interrupted.
+
+No response or an evasive response does not resolve the food identity. Do not
+silently guess, time out into a completed log or forget the unresolved item.
+No durable pending-meal store is provided: after a lost context or an ambiguous
+answer spanning multiple pending meals, ask for the original meal/photo/date.
+Do not promise pending questions survive a new empty session.
+
+### Explicitly saving a partial meal
+
+Only if the user explicitly asks to save known items now may you write that
+subset. Mark the meal note and reply "incomplete: [unresolved items] excluded";
+any total is a KNOWN-ITEM SUBTOTAL, not a full lunch total. Unknown items still
+must not be written as zero placeholders. Retain the saved meal ID and food IDs.
+When the user later identifies the missing dish, query current IDs/revision and
+`append` ONLY the newly resolved food to that meal with a new request ID. A
+correction to a saved item uses `update` on that ID. Do not `add` the full meal a
+second time. If the user wants analysis only, do not write even the known subset.
+
+### Scope of enforcement and acceptance
+
+This is an agent instruction gate, not a Python vision validator. The script
+cannot discover when a model confidently mislabels an image. Show compact dish
+names so the user can correct them, and never claim perfect identification.
+Behavior scenarios are in `evals/food-identity-confirmation.json` in the source
+repository. Offline tests check this contract and fixture structure; they are
+NOT evidence that a live model asked the right question or saw an actual photo.
+
 ## New record: add
 
 Example numbers below are synthetic API examples, not food reference values.

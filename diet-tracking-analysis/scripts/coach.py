@@ -215,7 +215,10 @@ class Coach:
                    "known_exercise_net_kcal": round(sum(known_net), 2), "exercise_calorie_unknown_sessions": len(exercises) - len(known_net),
                    "coverage": "recorded_only", "automatic_target_change": False}
         midpoint = iso_day(b) - timedelta(days=6)
-        previous = [w["kg"] for w in daily_weights if iso_day(w["date"]) < midpoint]
+        previous_start = iso_day(b) - timedelta(days=13)
+        # Always compare adjacent seven-day buckets ending at b, even when the
+        # requested report spans a month. Older readings cannot fill sparse weeks.
+        previous = [w["kg"] for w in daily_weights if previous_start <= iso_day(w["date"]) < midpoint]
         recent = [w["kg"] for w in daily_weights if iso_day(w["date"]) >= midpoint]
         summary["two_week_mean_change_kg"] = round(statistics.mean(recent) - statistics.mean(previous), 3) if len(previous) >= 3 and len(recent) >= 3 else None
         summary["review_readiness"] = "discussion_only" if logged >= 5 and len(daily_weights) >= 3 else "insufficient_data"
@@ -405,7 +408,10 @@ class Coach:
     def exercise_item(self, item, old=None):
         need(isinstance(item, dict), "exercise item must be an object")
         need(not set(item) - {"activity", "duration_min", "category", "intensity", "calories_kcal", "net_calories_kcal", "source", "note"}, "Unknown exercise field")
-        out = {**(old or {}), "id": old["id"] if old else "exercise_" + uuid.uuid4().hex,
+        # exercise-update is a complete replacement, not a patch. Carry only
+        # identity/time metadata; omitted activity details must not survive.
+        metadata = {k: old[k] for k in ("date", "recorded_at") if old and k in old}
+        out = {**metadata, "id": old["id"] if old else "exercise_" + uuid.uuid4().hex,
                "revision": (old or {}).get("revision", 0) + 1,
                "activity": label(item.get("activity"), "activity", 200),
                "duration_min": numeric(item.get("duration_min"), "duration_min", 0.1, 1440),
@@ -418,7 +424,6 @@ class Coach:
             if name in item:
                 out[name] = label(item[name], name)
         if old:
-            out.pop("index", None)
             out["updated_at"] = self.now.isoformat()
         else:
             out["recorded_at"] = self.now.isoformat()
