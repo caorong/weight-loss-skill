@@ -7,3 +7,11 @@ __pycache__/
 
 # 运行时运营数据:agent 发送召回后回写"已推送用户"名单,各环境本地维护,不入 git
 notification-composer/references/changelog.md
+
+# Standalone runtime and private health data are never source fixtures.
+/data/
+/request.json
+/diet-tracking-analysis/runtime.json
+/.env
+/.env.*
+!/.env.example
