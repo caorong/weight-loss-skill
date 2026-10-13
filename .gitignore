@@ -19,3 +19,10 @@ notification-composer/references/changelog.md
 # uv environments are machine-local; keep the lockfile in Git.
 .venv/
 .uv-cache/
+
+# Private profile/plan views in a workspace are not repository fixtures.
+/health-profile.md
+/health-preferences.md
+/PLAN.md
+/MEAL-PLAN.md
+/EXERCISE-PLAN.md

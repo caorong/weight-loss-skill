@@ -15,7 +15,9 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = ("SKILL.md", "scripts/meal-log.py", "scripts/self-test.py",
-         "references/standalone-flow.md", "pyproject.toml", "uv.lock", ".python-version")
+         "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py",
+         "references/standalone-flow.md", "references/coach-flows.md", "references/coach-api.md",
+         "references/native-reminders.md", "pyproject.toml", "uv.lock", ".python-version")
 
 
 def reject_symlink(path, boundary):
@@ -114,9 +116,14 @@ def main():
             preflight = json.loads(run_checked(cli + ["init", "--workspace", str(workspace), "--tz", args.timezone]))
             if not preflight.get("ok") or not preflight.get("writable"):
                 raise ValueError("Installed ledger preflight did not pass")
+            coach_cli = prefix + [str(target / "scripts/coach.py")]
+            coach_smoke = json.loads(run_checked(prefix + [str(target / "scripts/self-test-coach.py")]))
+            if not coach_smoke.get("ok"):
+                raise ValueError("Installed coach smoke test did not pass")
             python = run_checked(prefix + ["-c", "import sys; print(sys.executable)"]).strip()
             runtime = {
-                "schema_version": 2, "runner": args.runner, "command": cli,
+                "schema_version": 3, "runner": args.runner, "command": cli,
+                "commands": {"meals": cli, "coach": coach_cli},
                 "workspace": str(workspace), "timezone_fallback": args.timezone, "python": python,
                 "note": "Use command as an argv prefix. USER.md Timezone takes precedence. "
                         "Run in this SAME execution environment. No automatic runner fallback. "
@@ -135,7 +142,8 @@ def main():
                 shutil.rmtree(stage)
         print(json.dumps({"ok": True, "installed": str(target), "runner": args.runner,
                           "command": cli, "backup": str(previous) if previous else None,
-                          "preflight": preflight, "self_test": smoke,
+                          "preflight": preflight, "self_test": smoke, "coach_self_test": coach_smoke,
+                          "native_scheduler": "not_tested", "existing_coach_data_compatibility": "not_tested",
                           "openclaw_discovery": "not_tested", "model_vision": "not_tested",
                           "notes": ["Start a new OpenClaw session and verify skill/tool access and a real photo.",
                                     "No model keys, gateway config, profiles, reminders or other skills changed.",

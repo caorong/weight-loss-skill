@@ -251,11 +251,14 @@ class Ledger:
                 fd, probe = tempfile.mkstemp(prefix=".meal-probe-", dir=self.meals)
                 os.close(fd)
                 os.unlink(probe)
+                request_token = uuid.uuid4().hex
+                requests = self.safe(self.data / "requests")
+                requests.mkdir(mode=0o700, exist_ok=True)
                 return {"ok": True, "workspace": str(self.workspace), "timezone": self.tz_name,
                         "today": today, "yesterday": (now.date() - timedelta(days=1)).isoformat(),
                         "last_seven_days_start": (now.date() - timedelta(days=6)).isoformat(),
                         "now": now.isoformat(), "writable": True,
-                        "request_token": uuid.uuid4().hex}
+                        "request_token": request_token, "request_file": str(requests / (request_token + ".json"))}
             if action == "list":
                 selected = day or today
                 records = self.load(selected)
@@ -301,6 +304,10 @@ class Ledger:
                         "request_id was already used with different input; use a new ID for a new operation")
                 return {**prior["result"], "duplicate": True}
             selected = payload.get("date", today)
+            if selected == "today":
+                selected = today
+            elif selected == "yesterday":
+                selected = (now.date() - timedelta(days=1)).isoformat()
             require(day_value(selected) <= now.date(), "Future meals are not consumed intake")
             require(payload.get("status", "consumed") == "consumed", "Only consumed meals may be saved")
             records = self.load(selected)

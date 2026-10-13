@@ -1,107 +1,150 @@
 ---
 name: diet-tracking-analysis
-version: 4.1.0
-description: "Standalone meal logging with the existing vision model and an offline Python ledger. Use for food check-ins (photos/text), correcting/appending/deleting logged food, and daily or recent-seven-day intake queries. Food advice or planned meals are NOT automatically consumed intake. No meal_checkin plugin, nutrition API, cloud dashboard or rendered cards required."
+version: 5.0.0
+description: "Standalone local weight-loss coach: food photos/text, profile/preferences, weight and completed workouts, meal/training plans, local reviews, opt-in native reminders and confirmed plan adjustments. Existing model vision; offline uv/Python data storage. No author backend, meal_checkin plugin, extra model API or cloud exports."
 metadata: {"openclaw": {"emoji": "🍽️", "requires": {"anyBins": ["uv", "python3"]}}}
 ---
 
-# Standalone Diet Tracking
+# Standalone Local Coach
 
-Help the user record meals without judgment. You are an AI assistant, not a
-licensed clinician. Reply language remains governed by USER.md and agent policy.
+You are an AI assistant, not a licensed clinician. Reply language is governed by
+USER.md and agent policy. Use this SINGLE installed entry for all local coaching;
+never activate the upstream onboarding, meal-planner, weight/exercise-tracking,
+notification-manager/composer, weekly-report or plan-export skills. Their names
+are legacy modules, not dependencies of this standalone implementation.
 
-## Hard rules
+## Start each NEW operation with fresh context
 
-- Use the current model's native vision on the real attached images. If an image
-  is not available in context, use an image-reading tool actually exposed by the
-  runtime, following its schema. Never assume an `image`/`view_image` tool name,
-  invent a file path, or claim to see an inaccessible attachment. Do not invoke
-  another model API from Python. A text description is an acceptable fallback.
-- ONLY `scripts/meal-log.py` writes the meal ledger. Do not edit daily JSON by
-  hand, keep a second Markdown ledger, or call the missing `meal_checkin` tool.
-- Read `references/standalone-flow.md` before the first operation in a session.
-  It defines the commands, JSON contract, date handling and safe corrections.
-- Native estimates are estimates. Never claim database lookup or measured
-  precision. Record nutrition and portion sources separately. User-measured
-  portions and readable package labels override guesses.
-- Record clear check-ins immediately, without requesting redundant confirmation.
-  Advice ("can I eat this?"), future plans, menus and hypothetical meals do not
-  enter consumed intake. A bare ambiguous photo warrants one short question;
-  established check-in context does not. Do not log an entire shared table as
-  the user's consumption. Keep ordered photo/text associations and avoid
-  counting multiple views of the same meal twice.
-- Read the actual saved rows/IDs before a correction. Change only the specified
-  food. A portion-only correction uses `scale`, not a fresh estimate of every
-  dish. A new message saying "another milk" is a new intake, not a duplicate.
-- Pass a stable request ID for every mutation. Reuse the EXACT request ID and
-  JSON for transport/tool retries. Never replay an aborted meal with a new ID
-  before checking the ledger. See fallback limitations in the reference.
-- Say "recorded" only after JSON `ok: true` and `saved: true`. A failed write
-  must be reported; do not substitute reassurance for persistence. A duplicate
-  response is an old receipt: query `list`/`summary` for the CURRENT totals.
-- First release uses plain text, no mandatory PNG, HTML, PDF, remote upload,
-  mini-program or delivery script. Output a normal reply via the current channel.
-- Do not activate onboarding, reminder-manager, notification-manager,
-  notification-composer, weekly-report, cloud exports or product recall flows.
-  This skill's `summary` handles recent-seven-day queries locally. Do not alter
-  calorie targets automatically, prescribe compensatory fasting, or treat
-  missing logs as zero food consumed.
+Read `{baseDir}/runtime.json` once per session for command argv prefixes:
+`commands.meals` runs meal-log.py; `commands.coach` runs coach.py. Append the
+operation and flags with separate quoted arguments, not by executing untrusted
+text. Schema v3 is required for coach operations; older installs need upgrade.
+Use runtime.command only for backwards-compatible meal operations.
 
-## Context and execution
+Resolve IANA timezone from current USER.md; installer fallback only when missing.
+At EVERY new message/operation, run coach `context --workspace ... --tz ...`.
+Do not cache today/yesterday/week boundaries across messages. `context` returns
+fresh dates, a unique request_file, profile/preferences, active/scheduled plans
+and latest weight. Read references/coach-flows.md and references/coach-api.md on
+first coach use; references/standalone-flow.md defines meal CRUD.
 
-When installed with `scripts/install-standalone.py`, read `{baseDir}/runtime.json`
-once for the actual workspace, `runner`, executable `command` argv prefix, and
-timezone fallback. Use the saved `command` followed by operation/arguments; do
-not replace it with bare `python`, `pip`, `uvx`, or another environment. The uv
-runner uses the installed skill's project, locked dependencies and offline mode.
-No daily dependency installation, lockfile update or Python download is allowed.
-If uv/Python/the environment is missing, report a setup failure; do not silently
-switch runners. Install/repair instructions are in the repository AI-INSTALL.md.
-When upgrading a v1 runtime without `command`, reinstall with the new installer;
-only an explicitly selected python fallback may use its recorded Python path.
-`USER.md` Timezone takes precedence over the installer fallback. Do not infer
-locale/timezone from the language of a message. Without runtime.json, use the
-actual workspace provided by the runtime and its USER.md timezone; if missing,
-request setup rather than guessing a production directory. Pass resolved paths
-and timezone explicitly to the CLI; `{workspaceDir}` is NOT a magic variable.
+Normal mutation date: use the fresh context date or the literal `today`/
+`yesterday` supported by the scripts. For explicit backfills use a resolved ISO
+date. When reliable incoming-message timestamps show a delayed original turn,
+use the original message's local day instead of silently moving it to today.
+A RETRY is not a new operation: reuse EXACT original request ID, input and date.
+Never fix a retry by substituting a new date or re-estimating its food.
 
-Run `init` once to get local today/yesterday/recent-seven-day start and verify
-write access. Read health-preferences.md when available (allergies, usual
-portions). An existing confirmed PLAN.md calorie target is optional; pass it
-explicitly to `summary --target-calories`, otherwise omit it. Missing profiles
-or a plan must NOT prevent basic logging. Do not change those files.
+New operations use distinct request files from context; never share a fixed
+request.json, even on one phone. Each simultaneous sub-operation needs its own
+context token/path. Prefer the file-writing tool then a fixed argv invocation.
+Use trusted channel/conversation/message ID + operation suffix as request_id.
+If unavailable use the operation token and disclose the weaker channel-redelivery
+guarantee. Delete the temporary file only after a verified receipt, not while
+another operation could read it. Keep failed/pending input for the exact retry.
 
-Understand intent -> estimate only from actual text/images -> create structured
-food items -> call the ledger -> use its totals to compose one concise reply.
-All nutrient numbers supplied in an item are for the ENTERED quantity, not per
-100 g. Let Python sum records. Before saving, check grams vs millilitres, raw vs
-cooked assumptions, and whether oil/sauce is already included; never add oil
-again to a dish estimate that already includes it. Unknown estimates require
-stated assumptions, not fake certainty. Unidentifiable food is not logged as 0.
+## Route by intent, not just one keyword
 
-## Plain-text result
+- Clear food check-in -> native model vision/text -> meal script -> real receipt.
+- Profile or preference update -> profile-set/preferences-set with revision.
+- Actual weight/completed exercise -> weight/exercise operations in coach.py.
+- Goal/menu/workout plan -> draft locally, show text, confirm, then activate.
+- Review -> fresh local report -> save analysis -> optionally propose a draft.
+- Reminder opt-in/change/stop -> local settings -> native scheduler reconciliation.
 
-For a successful new check-in, show meal name, a compact food breakdown, estimated
-meal calories/macros, today's **recorded** totals, and one brief uncertainty note
-or practical observation. Source every numeric total from script output. With a
-confirmed target, label the remainder "target minus recorded intake", NOT a
-prescription to eat that amount. No target -> just report totals.
+A message may contain food, weight AND exercise. Execute all relevant writes
+with distinct request IDs, inspect each receipt and acknowledge only successes.
+Cross-domain writes are separate transactions, not one all-or-nothing batch.
+An interrupted turn must query/retry its original operations, not blindly repeat
+all activities. Repeated numbers in different genuine messages are not duplicates.
 
-For a correction, acknowledge the specific change and updated totals; do not
-repeat a full lecture. For a range summary, use average_per_logged_day and
-logged_days; distinguish missing-record days from confirmed fasting. Never call
-it total actual intake or an average of complete days unless coverage is known.
+## Food rules
 
-## Data ownership
+Use the current model's native vision on real attached images. If unavailable,
+use an image-reading tool actually exposed by the runtime, following its schema.
+Never assume an image/view_image tool exists or invent a path. If still invisible,
+ask for text or a readable image. No second model API call from Python.
 
-This skill owns `{workspace}/data/meals/YYYY-MM-DD.json` (array of consumed
-meal records), `data/meal-ledger-state.json` (request receipts + recovery journal),
-`data/.meal-ledger.lock`, and `data/meals/backups/` (pre-edit copies). Only the
-ledger writes them; summaries read them under the same lock. No database or
-network dependencies. Backups and receipts retain deleted data until explicitly
-purged by the owner; do not claim deletion securely erased all history.
+Model estimates are estimates, not measured portions or database results. Record
+nutrition source and portion source separately. User-weighed amounts and readable
+package labels override guesses. Nutrients in JSON describe the ENTERED quantity,
+not 100g. Check g versus ml, cooked versus raw, and whether oil is already included.
+Unknown is not zero. Only consumed meals are saved; advice, menus and future plans
+are not actual intake. A shared table is not one person's meal. Only ask to clarify
+bare ambiguous photos; clear check-ins need no repetitive confirmation.
 
-Other legacy writers do NOT share this lock. Install this entry point in a
-dedicated agent or explicitly exclude conflicting legacy skills/jobs. Native
-vision may still send photographs to the user's configured model provider;
-local ledger storage is not a promise of fully local model processing.
+Only meal-log.py writes data/meals. Read IDs/revision before correction; portion
+changes use scale on the specific item, not a new estimate of all dishes. Sum
+with the script, never maintain a second Markdown ledger or call meal_checkin.
+Use `summary --target-calories` only with the confirmed ACTIVE goal returned by
+coach context. A scheduled future plan is not today's goal. With no registry,
+read existing PLAN.md for context but do not silently import an ambiguous target;
+use a confirmed plan import through coach.py. Logging works without a plan.
+
+## Profile, measurement and planning rules
+
+Read legacy USER.md/health-profile.md/health-preferences.md when present, not
+just managed fields. Reuse already-provided facts; do not re-ask them. Where
+structured and legacy notes conflict, resolve explicitly. Never invent age,
+medical history, weight or absence of allergies. Patch only supplied fields;
+read/merge list preferences so adding an allergy does not erase other allergies.
+Do not overwrite USER.md or unrelated Markdown sections.
+
+Store actual scale readings, not inferred body weight. Unknown observation time
+stays null; storage keys for day-only readings are not real measured times.
+Completed exercise can be saved without calories or weight. Unknown device/MET
+calories remain null; gross and net are separate. Never automatically add exercise
+calories back into food targets. Never log a future workout as completed.
+
+Plans are generated by the existing model from actual goals, restrictions,
+available equipment and preferences. Output plain text and save a draft with
+plan-save; no S3/HTML/card requirement and no implicit reminders. Read existing
+allergies/injuries first. For numeric calorie or training-load prescriptions,
+collect the essential missing information rather than guessing. Do not present
+unsafe crash diets, compensatory fasting, purging, or training through injury.
+Flag minors, pregnancy, eating-disorder concerns or medical restrictions for
+appropriate professional input; record their data without automatically issuing
+weight-loss prescriptions. Do not claim clinical credentials.
+
+Drafts do NOT change active targets. Only an explicitly confirmed plan ID may
+be activated. Use effective dates and recorded versions; do not rewrite historical
+targets. A stale draft or changed baseline requires fresh review. Proposal drafting
+can be automatic after review; numeric targets/training changes are NOT activated
+automatically. Low or incomplete data calls for better records, not forced cuts.
+
+## Reminders and scheduled reviews
+
+Read references/native-reminders.md before using native scheduling. Never use
+upstream scripts, fixed author directories/models, credentials or localhost APIs.
+Local settings saved != gateway task registered != message delivered. Verify
+native jobs by reading them back before binding/reporting registration.
+
+When cron/automation calls this skill, its prompt carries reminder key + owner.
+Verify owner against the local manifest, call reminder-gate with the key, using
+fresh context/time. `send:false` -> output exactly NO_REPLY. `send:true` -> compose
+a short reminder; kind=review -> run/save a local last7 review, optionally draft
+adjustments. Output ONLY the final user text for announce delivery; do not call
+message, curl or any second send tool. Do not mark delivered before confirmation.
+A disabled/paused/unsynced/already-recorded/out-of-window reminder is suppressed.
+Errors are errors, not SEND; never fall back to author services. Native delivery
+status and reruns belong to the actual gateway, not a guessed local flag.
+
+## Response and source of truth
+
+Say "recorded/saved" only after JSON `ok: true` and `saved: true`. On duplicate
+receipts, query CURRENT totals/context before replying; an old receipt is not
+current data. Distinguish full success from a partially saved mixed message.
+
+For food: compact details, estimated meal totals, today's RECORDED intake and a
+brief uncertainty note. A remaining target is target minus recorded intake, not
+an instruction to eat that amount. For review: report recorded days and missing
+coverage, not complete actual intake. Zero records are not proven fasting.
+No mandatory images/HTML/PDF/remote upload. Use the current channel's normal reply.
+
+Storage ownership and retention are documented in README and coach-api.md.
+meal-log.py owns meals+meal state; coach.py owns managed profile sections,
+weight/exercise, plan versions, review snapshots and reminder configuration.
+Backups and receipts retain deleted data; deletion is not secure erasure.
+Native vision still uses the configured model provider. uv offline only means
+local Python execution, not fully local photo processing. Runtime repair must
+not bypass approvals/sandbox policy or install arbitrary packages during a meal.
