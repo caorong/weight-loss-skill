@@ -1,8 +1,8 @@
 ---
 name: diet-tracking-analysis
-version: 4.0.0
+version: 4.1.0
 description: "Standalone meal logging with the existing vision model and an offline Python ledger. Use for food check-ins (photos/text), correcting/appending/deleting logged food, and daily or recent-seven-day intake queries. Food advice or planned meals are NOT automatically consumed intake. No meal_checkin plugin, nutrition API, cloud dashboard or rendered cards required."
-metadata: {"openclaw": {"emoji": "🍽️", "requires": {"bins": ["python3"]}}}
+metadata: {"openclaw": {"emoji": "🍽️", "requires": {"anyBins": ["uv", "python3"]}}}
 ---
 
 # Standalone Diet Tracking
@@ -50,7 +50,15 @@ licensed clinician. Reply language remains governed by USER.md and agent policy.
 ## Context and execution
 
 When installed with `scripts/install-standalone.py`, read `{baseDir}/runtime.json`
-once for the actual workspace, available Python path and timezone fallback.
+once for the actual workspace, `runner`, executable `command` argv prefix, and
+timezone fallback. Use the saved `command` followed by operation/arguments; do
+not replace it with bare `python`, `pip`, `uvx`, or another environment. The uv
+runner uses the installed skill's project, locked dependencies and offline mode.
+No daily dependency installation, lockfile update or Python download is allowed.
+If uv/Python/the environment is missing, report a setup failure; do not silently
+switch runners. Install/repair instructions are in the repository AI-INSTALL.md.
+When upgrading a v1 runtime without `command`, reinstall with the new installer;
+only an explicitly selected python fallback may use its recorded Python path.
 `USER.md` Timezone takes precedence over the installer fallback. Do not infer
 locale/timezone from the language of a message. Without runtime.json, use the
 actual workspace provided by the runtime and its USER.md timezone; if missing,

@@ -19,68 +19,69 @@
 不包含：专业营养数据库查询、可靠的视觉称重、完整训练计划重构、自动热量目标调整、
 提醒/召回/小程序接入。模型给出的份量和营养是估算，不是测量或医疗建议。
 
-## 快速安装
+## 交给 AI 安装
 
-需要 **Python 3.10+、macOS/Linux（Windows 可用 WSL）、系统时区数据库**。
-Python 和 workspace 必须在 OpenClaw 实际执行环境里可访问。无 pip 依赖。
+**让安装 AI 先读 [AI-INSTALL.md](AI-INSTALL.md)。** 根目录 `AGENTS.md` 也指向它。
+安装 AI 负责解析真实 workspace、准备 uv/Python、执行安装、自检并检查 OpenClaw 加载。
+不要只复制文件就报告成功，也不要把原仓库全部技能一次装入。
+
+可直接发给 AI：
+
+> 请安装 caorong/weight-loss-skill 的 feat/standalone-native-vision 分支。
+> 先读取 AI-INSTALL.md，按文档使用 uv 安装到我实际使用的 OpenClaw Agent workspace，
+> 完成脚本和加载验收。不要覆盖个人档案、启用旧后台或修改全局安全策略；
+> 图片链路未实测时明确标记待验证。
+
+## uv 运行环境
+
+默认使用 **uv >= 0.10.0 + Python 3.13 系列**；兼容底线 Python 3.10。
+仍为零第三方依赖，uv 主要统一 Python 选择、环境隔离、锁文件和执行入口。
+`pyproject.toml`、`uv.lock`、`.python-version` 放在技能目录，随安装复制；
+不会把上游后台/PDF/浏览器依赖安装进来。不发布 PyPI 包，不使用 `uvx`。
+
+macOS/Linux/WSL 和系统时区数据库仍然必需；uv 不会自动解决 OpenClaw 工具权限、
+图片传递或容器挂载。首次准备解释器可能需要网络；日常账本命令使用离线模式。
+uv 离线不代表照片处理完全本地，模型仍按你自己的配置运行。
+
+供安装 AI 使用的命令（先解析真实 workspace；不要照抄示例路径）：
 
 ```bash
 git clone --branch feat/standalone-native-vision https://github.com/caorong/weight-loss-skill.git
 cd weight-loss-skill
 
-# 替换为该 Agent 配置的真实 workspace；不是 OpenClaw 安装目录。
-WORKSPACE="$HOME/.openclaw/workspace"
-
-# 只预览，不写文件。
-python3 scripts/install-standalone.py --workspace "$WORKSPACE" --timezone Asia/Tokyo --dry-run
-
-# 安装一个技能，并检查本地账本写权限。
-python3 scripts/install-standalone.py --workspace "$WORKSPACE" --timezone Asia/Tokyo
+uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
+  --workspace "/actual/agent/workspace" --timezone Asia/Tokyo --dry-run
+uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
+  --workspace "/actual/agent/workspace" --timezone Asia/Tokyo
 ```
 
-workspace 必须已经存在。安装器只复制以下文件到 `<workspace>/skills/diet-tracking-analysis/`：
+workspace 必须存在，Python 3.13 须先准备好；详细环境探测见 AI-INSTALL.md。
+默认 `--runner uv`，缺 uv 时明确失败；`--runner python` 仅为明确授权的零依赖备用方案。
+安装器只携带独立模块、项目清单和自检脚本，不覆盖 USER/PLAN/AGENTS/体重数据，
+不创建提醒。已有同名技能须显式 `--replace`，先备份，失败回滚。
 
-```text
-SKILL.md
-scripts/meal-log.py
-references/standalone-flow.md
-runtime.json                  # 安装时生成：实际 workspace/Python/备用时区
-```
-
-不会覆盖 `USER.md` / `PLAN.md` / `AGENTS.md` / 体重数据；不会修改网关配置、注册模型、
-安装后台、读取密钥或创建定时任务。已有同名技能需要显式 `--replace`，先备份后替换。
-用户在 `USER.md` 配置的 Timezone 优先于安装时备用时区；所有 CLI 调用都显式传 `--tz`。
-
-**隔离说明：** 安装器不删除或禁用已存在的全局技能/旧 cron。建议使用专用 Agent，
-仅启用 `diet-tracking-analysis`；按你的 OpenClaw 版本配置实际可用技能和 exec 权限。
-不要让旧 `meal_checkin` 流程、旧饮食写入器、周报发布或自动 onboarding 同时管理这个账本。
-不要为了让技能运行关闭沙箱；应给沙箱挂载可持久化的 workspace 并提供 Python。
-
-安装后开启新会话，在手机渠道测试：
-
-```text
-记录午餐：[附饭菜照片]
-刚才米饭只吃了一半。
-再加一杯牛奶。
-今天已记录多少？最近七天怎么样？
-```
-
-第一次必须确认图片真的传给了视觉模型。不可见图片不能假装识别；可改用文字描述。
-如果 Agent 尚未配置 `USER.md` Language，请先按自己的偏好设置，技能不会猜测回复语言。
-
-## 命令行自检（不会生成假餐次）
+安装器在 `<workspace>/skills/diet-tracking-analysis/.venv` 新建独立环境，不复用
+临时克隆的 `.venv`。`runtime.json` 保存实际命令前缀和 workspace/备用时区；
+USER.md 的时区优先。日常调用使用已安装目录，例如：
 
 ```bash
-SCRIPT="$WORKSPACE/skills/diet-tracking-analysis/scripts/meal-log.py"
-python3 "$SCRIPT" init --workspace "$WORKSPACE" --tz Asia/Tokyo
-python3 "$SCRIPT" list --workspace "$WORKSPACE" --tz Asia/Tokyo
-python3 "$SCRIPT" summary --workspace "$WORKSPACE" --tz Asia/Tokyo
+uv run --locked --offline --no-python-downloads --project "/actual/installed/skill" \
+  python "/actual/installed/skill/scripts/meal-log.py" summary \
+  --workspace "/actual/agent/workspace" --tz Asia/Tokyo
 ```
 
-`init` 返回本地 today、yesterday、last_seven_days_start 和写权限结果。
-JSON 输入、修改示例和错误处理详见
+不需要激活 venv，不混用 pip，不在记餐时更新依赖。更换机器/容器路径后重新安装。
+不要设置 UV_PROJECT_ENVIRONMENT/UV_WORKING_DIR 指向其他项目。维护新增依赖时，
+在开发环境使用 `uv add --project diet-tracking-analysis <package>` 并提交两个清单，
+不在用户记餐会话里安装任意包。
+
+安装器自动运行七项临时数据冒烟检查，输出可机器读取的 JSON；
+`openclaw_discovery` 和 `model_vision` 初始仍为 `not_tested`，由安装 AI 在实际渠道验收。
+既有全局旧技能/cron 不会自动被停用，建议专用 Agent，避免旧写入器冲突。
+不要为了让技能运行关闭沙箱。
+
+记录/纠正/汇总 JSON 契约见
 [diet-tracking-analysis/references/standalone-flow.md](diet-tracking-analysis/references/standalone-flow.md)。
-营养值按“实际输入份量的合计”传给脚本，不是每 100g 数据；不要把毫升直接当克。
 
 ## 存储与可靠性边界
 
@@ -112,11 +113,12 @@ Agent 在 duplicate=true 后应查询最新汇总。没有渠道稳定消息 ID 
 ## 开发与测试
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_meal_log.py' -v
-python3 -m unittest discover -s tests -p 'test_standalone_install.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_meal_log.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_standalone_install.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_uv_install.py' -v
 ```
 
-仅运行这两个独立测试集；上游其他测试可能依赖其部署环境，不把它们计作本版通过项。
+仅运行这三个独立测试集；上游其他测试可能依赖其部署环境，不把它们计作本版通过项。
 自动测试覆盖 CRUD/来源字段/兼容旧 list、时区与补记、目标可选、非法数据、重试冲突、
 并发重复/非重复写、写前备份、两类中断恢复、外部编辑冲突、符号链接和安装不覆盖档案。
 图片准确率、真实模型/渠道、OpenClaw 权限和沙箱必须在实际设备上做端到端验收。

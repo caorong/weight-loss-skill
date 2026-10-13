@@ -20,15 +20,15 @@ class InstallerTests(unittest.TestCase):
 
     def install(self, *flags):
         return subprocess.run([sys.executable, str(INSTALL), "--workspace", str(self.ws),
-                               "--timezone", "Asia/Tokyo", *flags],
-                              capture_output=True, text=True, timeout=15)
+                               "--timezone", "Asia/Tokyo", "--runner", "python", *flags],
+                              capture_output=True, text=True, timeout=30)
 
     def test_whitelist_and_runtime(self):
         result = self.install()
         self.assertEqual(result.returncode, 0, result.stderr)
         base = self.ws / "skills/diet-tracking-analysis"
         files = sorted(str(p.relative_to(base)) for p in base.rglob("*") if p.is_file())
-        self.assertEqual(files, ["SKILL.md", "references/standalone-flow.md", "runtime.json", "scripts/meal-log.py"])
+        self.assertEqual(files, [".python-version", "SKILL.md", "pyproject.toml", "references/standalone-flow.md", "runtime.json", "scripts/meal-log.py", "scripts/self-test.py", "uv.lock"])
         config = json.loads((base / "runtime.json").read_text())
         self.assertEqual(config["workspace"], str(self.ws))
         self.assertEqual(config["timezone_fallback"], "Asia/Tokyo")

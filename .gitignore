@@ -15,3 +15,7 @@ notification-composer/references/changelog.md
 /.env
 /.env.*
 !/.env.example
+
+# uv environments are machine-local; keep the lockfile in Git.
+.venv/
+.uv-cache/

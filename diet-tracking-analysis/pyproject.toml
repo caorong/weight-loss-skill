@@ -1,0 +1,10 @@
+[project]
+name = "weight-loss-standalone"
+version = "4.1.0"
+description = "Offline native-vision meal ledger for an OpenClaw agent"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+package = false
+required-version = ">=0.10.0"

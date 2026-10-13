@@ -7,18 +7,32 @@ availability. Do not bypass approvals or sandbox boundaries to make it run.
 
 ## Invocation
 
-Resolve `PYTHON`, `SCRIPT`, `WORKSPACE`, `TZ` from runtime.json / agent context.
-The following shell variables are example setup, not automatically injected:
+Read `{baseDir}/runtime.json`. Its `command` array is the exact argv prefix;
+append the operation and flags. In a shell use separately quoted arguments or
+a shell array; never join untrusted text into executable shell code.
+
+Default uv invocation (replace paths with actual runtime values):
 
 ```bash
-PYTHON=python3
-SCRIPT="/actual/skill/path/scripts/meal-log.py"
+UV="/actual/path/to/uv"
+BASE="/actual/skill/path"
 WORKSPACE="/actual/agent/workspace"
 TZ="Asia/Tokyo"
-"$PYTHON" "$SCRIPT" init --workspace "$WORKSPACE" --tz "$TZ"
-"$PYTHON" "$SCRIPT" list --workspace "$WORKSPACE" --tz "$TZ"
-"$PYTHON" "$SCRIPT" summary --workspace "$WORKSPACE" --tz "$TZ"
+RUN=("$UV" run --locked --offline --no-python-downloads --project "$BASE" python "$BASE/scripts/meal-log.py")
+"${RUN[@]}" init --workspace "$WORKSPACE" --tz "$TZ"
+"${RUN[@]}" list --workspace "$WORKSPACE" --tz "$TZ"
+"${RUN[@]}" summary --workspace "$WORKSPACE" --tz "$TZ"
 ```
+
+These are Bash array examples; with another shell use the runtime's argv tool
+or quote each argument. Do not assume automatic shell-variable injection.
+`--runner python` is an explicit stdlib-only installation fallback; its
+runtime.command is `[python_path, script_path]`. Never silently switch to it.
+Keep UV_PROJECT_ENVIRONMENT / UV_WORKING_DIR unset so the skill cannot use an
+unrelated project's environment. Installation provisions `.venv` at its final
+location; do not copy `.venv` from a checkout or another machine. `--offline`
+controls uv, not the current model's network use. Failure -> repair setup, not
+remove lock/offline flags or install global packages during a meal turn.
 
 `init` returns today, yesterday, last_seven_days_start, now and a random
 request_token. A seven-day query uses that start and today as inclusive
@@ -35,7 +49,7 @@ Delete the temporary request after receipt when appropriate. Do not place real
 health fixtures or photos in the Git repository.
 
 ```bash
-"$PYTHON" "$SCRIPT" add --workspace "$WORKSPACE" --tz "$TZ" --input "$WORKSPACE/request.json"
+"${RUN[@]}" add --workspace "$WORKSPACE" --tz "$TZ" --input "$WORKSPACE/request.json"
 ```
 
 ## New record: add
