@@ -14,12 +14,12 @@ def main():
     checks = []
     counter = 0
     with tempfile.TemporaryDirectory(prefix="coach smoke ") as ws:
-        def call(action, payload=None):
+        def call(action, payload=None, flags=()):
             nonlocal counter
             counter += 1
             if payload is not None:
                 payload = {"request_id": f"smoke-coach:{counter}", **payload}
-            proc = subprocess.run([sys.executable, str(script), action, "--workspace", ws, "--tz", "Asia/Tokyo"],
+            proc = subprocess.run([sys.executable, str(script), action, "--workspace", ws, "--tz", "Asia/Tokyo", *flags],
                                   input=json.dumps(payload) if payload is not None else None,
                                   text=True, capture_output=True, timeout=30)
             if proc.returncode:
@@ -55,6 +55,11 @@ def main():
         saved = call("review-save", {"start": report["start"], "end": report["end"],
                      "expected_snapshot": report["snapshot"], "analysis": "SYNTHETIC incomplete records."})
         check((Path(ws) / saved["path"]).is_file(), "review_local_file")
+        daily = call("review", flags=("--review-type", "daily"))
+        check(daily["start"] == daily["end"] == ctx["today"], "daily_today_only")
+        check(daily["review_boundaries"]["tomorrow_tasks"] == [], "daily_no_tomorrow_tasks")
+        weekly = call("review", flags=("--review-type", "weekly"))
+        check(weekly["weekly_review"]["calendar_week"] and weekly["weekly_review"]["calendar_window_closed"], "weekly_previous_complete_calendar_week")
         check(call("reminder-specs")["specs"] == [], "reminders_opt_in_only")
     print(json.dumps({"ok": True, "checks": checks, "real_workspace_modified": False,
                       "native_scheduler": "not_tested", "model_planning_and_vision": "not_tested"}))

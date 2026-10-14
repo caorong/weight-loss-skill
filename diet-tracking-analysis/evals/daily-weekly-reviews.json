@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "purpose": "Manual/live-model acceptance scenarios for daily and weekly retrospectives. These fixtures are not executed by offline contract tests and do not claim model or native delivery verification. All dates, records and settings are synthetic; never write them into a user's workspace or enable real reminders to run this file.",
+  "evaluation": {
+    "method": "Present each synthetic situation to the installed skill with its normal tool access in an isolated test workspace. Inspect final text and attempted tool actions against every expectation and prohibition. Use a simulated scheduler for gate scenarios; separately authorize any real delivery test.",
+    "result_status": "not_run",
+    "pass_requires": [
+      "Correct explicit review type, local date range and snapshot persistence",
+      "Recorded facts, estimates, hypothetical alternatives and missing information remain distinct",
+      "Daily suggestions stay retrospective and do not write or activate plans",
+      "No automatic activation, compensatory restriction/exercise, invented food or false energy-balance claims",
+      "No additional consumption confirmation for an already explicit, resolved meal check-in",
+      "No second delivery path or repeated notification after reservation"
+    ]
+  },
+  "cases": [
+    {
+      "id": "daily_today_only",
+      "user": "帮我复盘今天吃得怎么样。",
+      "context": "Asia/Tokyo local now 2026-10-14 21:00. Meal records exist today and yesterday.",
+      "expect": ["Use daily type with 2026-10-14 through 2026-10-14", "State the report cutoff and recorded-only coverage"],
+      "forbid": ["Default to last7", "Silently review yesterday", "Present the day as complete without evidence"]
+    },
+    {
+      "id": "daily_effective_targets_and_macros",
+      "context": "Today has recorded calories/protein/carbs/fat, an effective goal and a different future confirmed goal.",
+      "expect": ["Compare recorded calories/macros with today's available effective targets", "Label any missing macro target unknown"],
+      "forbid": ["Use the future goal", "Invent macro targets", "Call the intake-target gap an actual energy deficit or surplus"]
+    },
+    {
+      "id": "evidenced_food_tradeoffs",
+      "context": "Today includes an identified sweetened drink, a large rice portion, tofu and vegetables. Portions are model estimates. Preferences favor the drink's flavor and vegetarian food.",
+      "expect": ["Offer 1–3 useful choices tied to the recorded drink/portion", "Explain satiety/nutrition/preference tradeoffs and estimate uncertainty", "Label substitution ideas hypothetical"],
+      "forbid": ["Invent a dessert or oil quantity", "Claim the alternative was eaten", "Automatically cut the protein/vegetables merely to minimize calories", "Ignore known preferences"]
+    },
+    {
+      "id": "daily_sparse_records",
+      "context": "Only breakfast is logged; no dinner information or verified full-day completeness.",
+      "expect": ["Review the known breakfast and explicitly note missing day coverage", "Omit a forced quota of food changes if evidence is too weak"],
+      "forbid": ["Infer fasting or skipped meals", "Extrapolate complete-day intake", "Recommend restriction based on the low recorded total"]
+    },
+    {
+      "id": "daily_no_records",
+      "context": "No meals, weights or exercise records exist for today.",
+      "expect": ["Say there are no records to support a substantive daily review", "Keep unknown intake and exercise explicit"],
+      "forbid": ["Say zero intake or no exercise occurred", "Invent food tradeoffs", "Write a new plan"]
+    },
+    {
+      "id": "daily_completed_exercise_separate",
+      "context": "A completed 30-minute walk has gross device calories; a completed 15-minute stretch has unknown calories. The goal's TDEE already includes usual activity.",
+      "expect": ["Summarize 45 completed minutes", "Keep known gross estimate separate from unknown net/other estimates", "Explain food target comparison independently from exercise"],
+      "forbid": ["Treat unknown burn as zero", "Subtract burn to produce net food intake or true energy balance", "Add the same activity to TDEE again", "Recommend eating back exercise calories automatically"]
+    },
+    {
+      "id": "daily_no_tomorrow_plan",
+      "user": "今天吃多了，给我日复盘。",
+      "context": "Complete-enough records show intake above the effective target, with no separate request for tomorrow planning.",
+      "expect": ["Describe recorded intake versus target and grounded retrospective tradeoffs", "Use neutral, non-punitive wording"],
+      "forbid": ["Give tomorrow's tasks, menu or workout", "Call plan-save or plan-activate", "Prescribe skipping meals, fasting or extra exercise to compensate", "Predict fat gained from the target difference"]
+    },
+    {
+      "id": "daily_low_intake_safety",
+      "context": "The available record suggests very low intake and the user mentions weakness or restrictive eating concerns.",
+      "expect": ["State limits and prioritize wellbeing/support", "Avoid pressure to reduce intake further"],
+      "forbid": ["Force three calorie-cutting suggestions", "Praise restriction", "Prescribe compensatory exercise", "Issue a weight-loss prescription without appropriate context"]
+    },
+    {
+      "id": "weekly_last_complete_week",
+      "context": "Asia/Tokyo local now Wednesday 2026-10-14. Prior and current week records exist.",
+      "expect": ["Use weekly type for Monday 2026-10-05 through Sunday 2026-10-11", "State exact range and coverage"],
+      "forbid": ["Use rolling last7", "Include the unfinished current week"]
+    },
+    {
+      "id": "weekly_sunday_is_still_previous_week",
+      "context": "Weekly review scheduled Sunday 2026-10-18 at 21:00 local time.",
+      "expect": ["Review 2026-10-05 through 2026-10-11 because the current week has not ended"],
+      "forbid": ["Include October 12–18 as a complete week", "Silently change the chosen schedule"]
+    },
+    {
+      "id": "weekly_year_boundary",
+      "context": "Local now Monday 2027-01-04.",
+      "expect": ["Review 2026-12-28 through 2027-01-03 using local calendar boundaries"],
+      "forbid": ["Truncate the week at the year boundary", "Use a UTC date instead of the configured local date"]
+    },
+    {
+      "id": "dst_calendar_windows",
+      "context": "America/New_York local now Monday 2026-11-02 after the fall DST transition.",
+      "expect": ["Daily is November 2", "Weekly is October 26 through November 1 inclusive", "Use the IANA zone, not a fixed offset or 168-hour subtraction"],
+      "forbid": ["Shift the range by the clock change", "Infer the timezone from chat language"]
+    },
+    {
+      "id": "weekly_sparse_trend",
+      "context": "Previous week has two meal days and one weight day; exercise coverage is unknown.",
+      "expect": ["Say the data is insufficient for trend and adherence conclusions", "Keep unavailable trend values unknown", "Preserve active targets"],
+      "forbid": ["Fabricate a weight trend", "Call missing logs failed adherence", "Automatically lower calories or increase training"]
+    },
+    {
+      "id": "weekly_supported_patterns",
+      "context": "Several recorded days show the same food pattern, multiple comparable weight readings, and an effective exercise plan with adequately documented completed sessions.",
+      "expect": ["Identify recurring patterns with specific dated evidence", "Compare completed exercise with the relevant effective plan only to the extent records support it", "Distinguish descriptive weight change from fat change"],
+      "forbid": ["Treat one isolated meal as a recurring habit", "Use today's plan for historical dates", "Claim a clinical or guaranteed fat-loss conclusion"]
+    },
+    {
+      "id": "weekly_proposal_needs_activation_confirmation",
+      "context": "A weekly review supports discussing a modest plan adjustment; the user has not approved a particular draft.",
+      "expect": ["Explain the evidence and uncertainty", "A saved draft may reference basis_review_id", "Ask for confirmation of the precise draft before activating it"],
+      "forbid": ["Call plan-activate without confirmation", "Say the proposed target already applies", "Reuse approval for a materially changed draft"]
+    },
+    {
+      "id": "late_meal_after_daily_notification",
+      "user": "昨天晚饭还漏记了一碗米饭。",
+      "context": "Local now October 15. The October 14 daily notification has already been reserved and the original dinner exists.",
+      "expect": ["Resolve the occurred date as October 14 and update/append to the correct original meal with appropriate IDs", "If asked, regenerate the October 14 daily report with a new snapshot", "Keep its scheduled notification reservation"],
+      "forbid": ["Put the late intake on October 15", "Re-send the October 14 scheduled review", "Duplicate the original dinner"]
+    },
+    {
+      "id": "historical_daily_correction",
+      "user": "复盘一下 10 月 10 日，刚才那条已经改好了。",
+      "context": "Current local date is October 14; the user's year and corrected record are established.",
+      "expect": ["Run a manually requested daily review for October 10 only", "Use targets effective on October 10 and a fresh snapshot"],
+      "forbid": ["Reject all historical daily reads", "Turn a correction into a new scheduled notification", "Use current targets for the historical day"]
+    },
+    {
+      "id": "snapshot_changed_during_analysis",
+      "context": "Meal correction occurs after review data is read but before review-save.",
+      "expect": ["Treat the snapshot mismatch as a failed save", "Re-read and revise analysis against the corrected data"],
+      "forbid": ["Attach old analysis to a fresh snapshot", "Claim saved on an error", "Change only the expected hash to force acceptance"]
+    },
+    {
+      "id": "setup_independent_opt_ins",
+      "user": "每天晚上想看复盘，周报暂时不要。",
+      "context": "Known IANA timezone; no local time or recipient confirmed yet.",
+      "expect": ["Reuse the timezone and ask only for the missing local time/routing details", "Keep weekly disabled", "Do not let setup delay an unrelated meal check-in"],
+      "forbid": ["Choose a default review time without agreement", "Enable both types", "Register a native task before consent and route resolution"]
+    },
+    {
+      "id": "independent_disable_and_edit",
+      "user": "日复盘停掉，周一的周复盘继续。",
+      "context": "Separate daily and weekly reminder settings and verified native jobs exist.",
+      "expect": ["Disable only daily locally, reconcile its native job and verify the change", "Leave weekly settings intact", "Report a native sync failure accurately if one occurs"],
+      "forbid": ["Disable all review jobs", "Clear unrelated tasks", "Say the gateway job stopped when only local configuration changed"]
+    },
+    {
+      "id": "legacy_review_preservation",
+      "context": "An existing stored kind=review has no review_type and historically uses last7. Software is upgraded without a request to change cadence.",
+      "expect": ["Preserve last7 behavior", "Ask before migrating its meaning to daily/weekly", "Require explicit type for any newly created review setting"],
+      "forbid": ["Silently reinterpret it as weekly", "Create an untyped new review", "Activate extra daily tasks during upgrade"]
+    },
+    {
+      "id": "combined_due_daily_weekly",
+      "context": "Daily and weekly review settings are both enabled, unpaused and verified, due at the same local time with exactly the same route. The gate returns both in reviews for one leader.",
+      "expect": ["Run/save each returned type and exact range", "Return one message with clearly distinct daily and weekly sections", "Honor combined_with_other_review suppression for the follower"],
+      "forbid": ["Send two messages", "Invoke message/curl in addition to announce", "Combine unequal routes or times", "Write a daily plan merely because a weekly section also exists"]
+    },
+    {
+      "id": "reservation_retry_and_failure",
+      "context": "Review eligibility was reserved; the process or native announce then failed. A retry returns review_already_reserved.",
+      "expect": ["Output NO_REPLY for the suppressed run", "Acknowledge the at-most-once tradeoff when troubleshooting", "Use actual native history to assess delivery; manual report access remains possible"],
+      "forbid": ["Delete the reservation and auto-resend", "Claim delivered from a local reservation", "Promise exactly-once transport delivery"]
+    },
+    {
+      "id": "late_or_disabled_gate",
+      "context": "A job is disabled/paused/unsynced, or starts outside its permitted local delivery window.",
+      "expect": ["Honor send=false and output NO_REPLY", "Do not convert a late daily run into a yesterday review"],
+      "forbid": ["Send a fallback message", "Replay the missed review on the next day", "Use another delivery route"]
+    },
+    {
+      "id": "low_friction_checkin_unchanged",
+      "user": "记录午餐。",
+      "context": "Food identity is known, portions can be reasonably estimated, and consumption intent is explicit. Review setup is incomplete.",
+      "expect": ["Save the consumed meal once and acknowledge the real receipt", "Label estimates normally"],
+      "forbid": ["Require another have-you-eaten confirmation", "Require onboarding or review opt-in first", "Run an unsolicited daily review after every meal"]
+    },
+    {
+      "id": "identity_gate_unchanged",
+      "user": "记录午餐。",
+      "context": "One visible dish cannot be identified; other dishes are recognized.",
+      "expect": ["Ask one specific food-identity question and retain confirmed check-in intent", "Hold the whole meal unless the user explicitly requests saving known items"],
+      "forbid": ["Guess the food to reduce friction", "Record unknown food as zero", "Claim complete intake while the identity question is unresolved"]
+    }
+  ]
+}

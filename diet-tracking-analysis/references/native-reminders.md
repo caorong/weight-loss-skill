@@ -8,6 +8,11 @@ and the existing mobile channel must actually be available for reminders.
 
 ## 1. Consent and local configuration
 
+During setup, confirm the existing IANA timezone (ask only if missing/unclear),
+then ask independently: daily review enabled or off, and local time if enabled;
+weekly review enabled or off, and one weekday/local time if enabled. Neither opt-in
+is implied by installing, creating a plan or enabling the other. The user can edit,
+pause or disable either later without affecting the other or ordinary check-ins.
 Only after user requests reminders, obtain the exact times, weekdays and resolved
 recipient. Query actual runtime routing: explicit Agent, channel and recipient.
 Do not guess from an Agent name, default to Slack or use channel=last. The first
@@ -35,7 +40,39 @@ Use reminder-set, expected_revision from `reminders`/context:
 ```
 This is a schema example, not permission to schedule 09:00. key is a lowercase
 identifier; kinds breakfast/lunch/dinner/weight/exercise/review; weekdays 0=Sunday.
-Review can be weekly with weekdays=[0] at a user-chosen time. Timezone comes from
+New review settings MUST specify review_type; use separate reminder keys:
+
+```json
+{
+  "key":"daily-review",
+  "settings":{
+    "enabled":true,
+    "kind":"review",
+    "review_type":"daily",
+    "time":"21:00",
+    "weekdays":[0,1,2,3,4,5,6],
+    "route":{"agent":"ACTUAL_AGENT","channel":"ACTUAL_CHANNEL","to":"ACTUAL_RECIPIENT"},
+    "pause_until":null
+  }
+}
+```
+
+This is a settings fragment; wrap it in reminder-set with a real request_id,
+expected_revision and confirmed=true only after consent. The example time is not
+a default. For weekly use another key, review_type=weekly, one chosen weekday
+(for example [1] for Monday), and the user's chosen time. daily uses all seven
+weekdays and covers today; weekly uses one weekday and covers last-week, the
+previous complete local Monday–Sunday. The gate resolves review_period from the
+type. Do not attach daily/weekly fields to food, weight or exercise reminders.
+
+An already stored kind=review WITHOUT review_type remains the legacy last7
+behavior. Do not relabel/migrate it silently or create another legacy review. Ask
+which cadence(s) the user wants, then update the appropriate keys and reconcile
+native jobs. Ordinary disable/pause/edit of a legacy entry preserves its existing
+meaning until that explicit migration. Read current settings before patching; a
+daily/weekly type change must update incompatible weekdays too.
+
+Timezone comes from
 resolved --tz, never a fixed UTC offset. `enabled:false` stops local sending
 immediately. A pause_until is a timezone-aware ISO instant; null clears a pause.
 Read current revision and merge only requested changes. Pause/disable preserves
@@ -94,13 +131,53 @@ as yesterday's reminder. The gateway's next on-time run proceeds normally.
 send=false -> exact NO_REPLY (verify the installed runtime supports this suppression
 sentinel). send=true -> brief final text. Do NOT call message/curl/send scripts.
 Announce handles delivery; do not record local "delivered" before a native receipt.
-No local exactly-once delivery guarantee is claimed; scheduler transport/history
-owns delivery and retries. Paused native tasks can still incur invocation costs.
+Paused native tasks can still incur invocation costs.
 
-kind=review -> local `review --period last7`, save commentary with review-save,
-optionally plan-save a proposal linked to that review. Return plain text. No website,
-MySQL/S3, plan-export or mini-program is needed. Never activate the proposal in the
-scheduled run; user confirmation is a separate interactive operation.
+### Review reservation and simultaneous due reviews
+
+For kind=review, a successful gate reserves each notification BEFORE returning
+send=true, under the local coach lock. data/coach-review-deliveries.json records
+reservation/audit state by exact route, IANA timezone, review type and local
+date/range. Different configured times on the same route do not authorize a second
+notification for an already reserved range. It is not a delivery
+receipt. Repeated or concurrent attempts for the same notification return
+send=false (review_already_reserved); no second announce is allowed.
+
+When typed daily and weekly reviews are eligible at the same configured local
+time and exact route, one deterministic leader handles both. A follower returns
+combined_with_other_review. Only eligible, enabled, unpaused and verified settings
+are combined. Follow the gate's reviews array, with key, review_type, review_period,
+start, end, notification_key and snapshot for each component. Do not discover a second due
+review yourself and send separately. Different times/routes are not combined.
+
+This deliberately provides at-most-once LOCAL notification eligibility, not
+exactly-once delivery. A crash or announce failure AFTER reservation can mean a
+missed message. Do not clear reservations or automatically replay that range to
+compensate; inspect actual gateway history and tell the user what is known. A
+manual report is still available. Native transport may have its own behavior;
+only its receipts prove delivery. Late records and report regeneration do not
+reset the reservation or trigger a repeat notification.
+
+### Compose the allowed retrospective
+
+For each returned reviews entry, run review with its review_type and exact range,
+then review-save with the same type/range and expected_snapshot. daily=today;
+weekly=last-week; an existing untyped legacy entry retains custom/last7. Preserve
+the resolved dates across this operation. If both are returned, compose one plain
+text message with distinct daily and weekly sections; do not duplicate the facts.
+Apply coach-flows.md's rubric:
+
+- Daily: recorded calories/macros versus effective target, completed exercise
+  duration/available estimates separately, cutoff/completeness, and 1–3 evidenced
+  food tradeoffs only when supported. No tomorrow tasks, plan draft/write or
+  compensatory restriction/exercise.
+- Weekly: supported trends/patterns and adequately evidenced exercise adherence.
+  A linked plan draft may be proposed; never activate it in a scheduled run.
+  User confirmation is a separate interactive operation.
+
+Do not call intake-minus-target a true surplus/deficit, subtract exercise into a
+daily energy balance, or double-count TDEE activity. No website, MySQL/S3,
+plan-export or mini-program is needed.
 
 ## 4. Cancellation and failure
 

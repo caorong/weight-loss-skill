@@ -30,7 +30,8 @@ class InstallerTests(unittest.TestCase):
         files = sorted(str(p.relative_to(base)) for p in base.rglob("*") if p.is_file())
         self.assertEqual(files, sorted([".python-version", "SKILL.md", "pyproject.toml", "references/standalone-flow.md",
               "references/coach-api.md", "references/coach-flows.md", "references/native-reminders.md", "runtime.json",
-              "scripts/meal-log.py", "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py", "scripts/self-test.py", "uv.lock"]))
+              "references/coach-review.schema.json", "references/coach-reminder-settings.schema.json",
+              "evals/daily-weekly-reviews.json", "scripts/coach_review.py", "scripts/coach_review_reminders.py", "scripts/meal-log.py", "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py", "scripts/self-test.py", "uv.lock"]))
         config = json.loads((base / "runtime.json").read_text())
         self.assertEqual(config["schema_version"], 3)
         self.assertIn("coach", config["commands"])
