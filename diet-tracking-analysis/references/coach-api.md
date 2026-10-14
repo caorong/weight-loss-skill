@@ -17,15 +17,24 @@ for retries. Receipts can be stale: after duplicate=true read current data.
 - measurements [--period today|yesterday|last7|last14|this-week|last-week]
   [--start YYYY-MM-DD --end YYYY-MM-DD]: reads weight and exercise.
 - plans: all immutable plan versions + active versions selected by local date.
-- review: same range flags, default last7, joins all local domains, returns snapshot.
+- review [--review-type daily|weekly|custom]: joins local domains and returns a
+  snapshot. daily defaults to today and requires one local date; weekly defaults
+  to last-week and requires a Monday–Sunday seven-day range; custom/untyped keeps
+  the legacy last7 default and flexible inclusive ranges.
 - reminders: desired local settings/known bindings; not live gateway status.
 - reminder-specs: scoped native job specs and hashes; does not register them.
-- reminder-gate --key KEY: send boolean/reason; read-only, never marks delivery.
+- reminder-gate --key KEY: send boolean/reason. Ordinary reminder checks are
+  read-only; an eligible review gate atomically reserves notification eligibility
+  before returning send=true. A reservation never marks actual delivery.
 
 Range flags apply only to measurements/review. Always pass both start/end for
 explicit intervals (inclusive, <=366 dates). New operations resolve date afresh.
 Mutation date/effective_date belong in JSON, not CLI query flags. Data dates accept
 ISO/today/yesterday as appropriate; retries keep the original literal and request ID.
+--review-type belongs only to review reads; review-save takes review_type in JSON.
+Manual historical daily ranges support corrections, while scheduled daily reviews
+always use today. weekly defaults to the previous completed week; arbitrary old
+complete Monday–Sunday ranges are available when explicitly requested.
 
 ## Profile / preferences patches
 
@@ -121,13 +130,78 @@ select active versions; the last physical paragraph may be a future plan.
 
 ## Review persistence and proposals
 
+Compute the report first, then use its exact type, start/end and snapshot:
+
+```json
+{"request_id":"msg:daily-review:1","review_type":"daily","start":"2026-10-14","end":"2026-10-14","expected_snapshot":"COPY_EXACT_REPORT_SNAPSHOT","analysis":"Evidence-based retrospective from the model"}
+```
+
 review-save input: request_id, start, end, expected_snapshot, analysis (text from
-the model). Compute review first. A snapshot mismatch fails; do not attach old
-analysis to changed data. Saves a new ID in data/coach-reviews.json and a readable
-`data/reports/coach-review-START-END.md`. The same period can have multiple saved
-versions; the Markdown shows the latest, the registry retains all snapshots.
-A proposal uses plan-save with basis_review_id and still requires plan-activate
-confirmation. Reports never change active targets on their own.
+the model), plus review_type=daily|weekly|custom. Omitting type retains legacy
+custom semantics; do not omit it for a typed report. A snapshot mismatch fails;
+recompute the report AND interpretation rather than swapping the hash into stale
+analysis. cutoff_at is the query time and excluded from the snapshot hash so time
+passing alone does not invalidate a save. Substantive evidence, type, coverage,
+effective targets and the prior-week weight comparison remain covered by the hash.
+
+Saves a new ID in data/coach-reviews.json and a readable file:
+
+- daily: data/reports/coach-review-daily-START-END.md
+- weekly: data/reports/coach-review-weekly-START-END.md
+- custom/legacy: data/reports/coach-review-START-END.md (unchanged)
+
+The same type/period can have multiple saved versions; the Markdown shows the
+latest, while the registry retains all snapshots. A manual regeneration after
+late records does not reset notification eligibility or send another message.
+Daily analysis must not write plans. A weekly proposal may use plan-save with
+basis_review_id, but requires explicit confirmation before plan-activate. Reports
+never change active targets on their own.
+
+### Report evidence and limits
+
+references/coach-review.schema.json documents the enriched report and the
+reviewSaveInput definition. It is an interchange contract, not a live-model
+validator or a new Python dependency. Narrative still follows coach-flows.md.
+
+- review_type, start/end, timezone and cutoff_at identify the local window and
+  observation cutoff. coverage.full_intake_confirmed is false; a closed calendar
+  day is not proof of a complete log.
+- Each meal_days entry retains totals/records and adds effective_targets,
+  intake_minus_target, target_comparison, completeness, exercise_plan_id,
+  exercise_estimate, food_evidence, largest_recorded_food_contributors,
+  food_tradeoff_candidates and unknowns. A missing target/gap is null. A numerical
+  gap is recorded intake minus effective target, never true energy balance.
+- food_evidence keeps date/meal_id/food_id, quantity/unit, nutrition/portion sources
+  and nutrients. Tradeoff candidates are conservative optional observations tied
+  to those IDs, not food that was eaten, guaranteed savings or mandatory advice.
+  The runtime shortlist only recognizes explicit sweet-drink/dessert names and
+  ranks their recorded calories; it is not a personalized optimizer. The model
+  may reason over ALL actual food_evidence for useful omissions, reductions or
+  substitutions, considering satiety/nutrition/preferences. It may transparently
+  estimate a proportional change for the SAME composition (for example, half a
+  recorded portion is roughly half its estimated calories), disclosing assumptions.
+  Runtime estimated_calorie_saving=null does not prohibit that supported arithmetic;
+  it does prohibit treating a missing estimate as an established saving. Do not
+  invent food, substitute nutrition or savings to reach a quota.
+- exercise_estimate gives recorded sessions/minutes and known gross/net estimates
+  separately, with unknown counts and sources. It never adjusts food targets or
+  subtracts exercise from intake. No recorded sessions does not prove inactivity.
+- review_boundaries records no automatic target/plan change, no compensation and
+  an empty tomorrow_tasks list. It does not mechanically validate model prose.
+- weekly_review.weight_trend compares daily medians from the reviewed complete
+  week and the immediately preceding week. It requires at least three weight
+  dates in EACH; unsupported change remains null. These are descriptive software
+  heuristics, not clinical thresholds. Prior-week evidence is included in snapshot.
+- weekly_review.recurring_observations identifies repeated supported observations
+  and recording gaps, not causes of weight change. exercise_adherence is currently
+  not_assessable: existing free-text plans are not a machine-verified schedule.
+  planned_sessions/completion_rate remain null, even when an effective plan exists.
+  Never turn these values into an invented adherence percentage.
+
+The original summary fields remain for compatibility. Its two_week_mean_change_kg
+uses only weights inside the requested report range, whereas the typed weekly
+weight_trend explicitly reads the preceding comparison week. Use the typed weekly
+field for that comparison, and name the window accurately.
 
 ## Reminder APIs
 
@@ -135,10 +209,28 @@ See native-reminders.md for full examples and the actual Gateway handshake.
 Local reminder-set and reminder-bind require mutation request IDs. sync-plan is
 read-only: it consumes a complete gateway jobs snapshot, returns proposed native
 operations and never contacts the network. Do not mistake its output for execution.
+references/coach-reminder-settings.schema.json describes canonical complete NEW
+settings, not patches or legacy stored entries. New kind=review settings require
+review_type=daily|weekly; daily has all seven weekdays and weekly exactly one.
+review_period is derived in gate output (today/last-week); it is not a settings
+field. Existing untyped review entries remain custom/last7 until explicit migration.
+
+A successful review gate returns reviews[] with key, review_type, review_period,
+start, end, notification_key and snapshot; top-level review_type/review_period
+identify the first returned component. notification_reservation.at_most_once=true
+and delivered=false mean RESERVED, not delivered. notification_key is scoped by
+the exact route, IANA timezone, type and local date/range; the same route's duplicate
+schedule times do not earn a second notification for that range. The reservation is stored
+in data/coach-review-deliveries.json under the coach lock. Same-time/route eligible
+reviews elect a deterministic leader; followers return combined_with_other_review.
+Already reserved ranges return review_already_reserved. A crash after reservation
+may drop a notification; do not erase it or replay automatically. This local
+eligibility guarantee is not an exactly-once native transport guarantee.
 
 ## Transaction and maintenance boundaries
 
-coach.py owns profile sections, measurements, plans, reviews, reminder settings.
+coach.py owns profile sections, measurements, plans, reviews, reminder settings
+and review notification reservations (not native delivery receipts).
 Writes use data/.coach.lock and data/coach-state.json (version/requests/pending).
 All changes in ONE transaction are recovered together before the next operation.
 Legacy exercise identity normalization is its own transaction and can remain saved

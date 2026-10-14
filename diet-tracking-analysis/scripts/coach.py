@@ -47,7 +47,7 @@ FIELDS = {
     "exercise-delete": {"id", "expected_revision"},
     "plan-save": {"kind", "body", "targets", "effective_date", "basis_review_id"},
     "plan-activate": {"plan_id", "confirmed"},
-    "review-save": {"start", "end", "expected_snapshot", "analysis"},
+    "review-save": {"start", "end", "expected_snapshot", "analysis", "review_type"},
     "reminder-set": {"key", "settings", "expected_revision", "confirmed"},
     "reminder-bind": {"key", "observed_job", "spec_hash"},
 }
@@ -194,6 +194,8 @@ class Coach:
         route = settings["route"]
         hour, minute = map(int, settings["time"].split(":"))
         message = f"Run diet-tracking-analysis reminder-gate for {key} (owner={self.owner})."
+        if settings.get("review_type"):
+            message += f" Review type: {settings['review_type']}."
         return {"name": f"local-coach-{self.owner}-{key}", "agentId": route["agent"],
                 "enabled": settings["enabled"], "schedule": {"kind": "cron", "expr": f"{minute} {hour} * * {','.join(map(str, settings['weekdays']))}", "tz": self.tz_name},
                 "sessionTarget": "isolated", "payload": {"kind": "agentTurn", "message": message},
@@ -204,7 +206,11 @@ class Coach:
                  "spec_hash": sha(packed(self.reminder_spec(k, s)).encode()), "binding": s.get("binding")}
                 for k, s in sorted(self.reminders()["items"].items())]
 
-    def report(self, a, b):
+    def report(self, a, b, review_type="custom"):
+        need(review_type in {"daily", "weekly", "custom"}, "Unsupported review type")
+        need(review_type != "daily" or a == b, "Daily review requires one local date")
+        need(review_type != "weekly" or (iso_day(a).weekday() == 0 and iso_day(b).weekday() == 6 and (iso_day(b) - iso_day(a)).days == 6), "Weekly review requires a complete Monday-Sunday range")
+        need(review_type != "weekly" or iso_day(b) < self.now.date(), "Weekly review requires a closed calendar week; use custom for partial weeks")
         # One coach snapshot; the meal ledger takes its own lock second.
         meal_ledger = meals_module.Ledger(self.store.workspace, self.tz_name)
         with meal_ledger.locked():
@@ -252,10 +258,14 @@ class Coach:
                   "exercises": exercises, "summary": summary,
                   "profiles": {"profile": self.fields("profile"), "preferences": self.fields("preferences")},
                   "current_plans": {k: self.active(plans, k, b) for k in KINDS}}
-        report["snapshot"] = sha(packed(report).encode())
+        from coach_review import enrich_report
+        report = enrich_report(self, report, review_type)
+        snapshot = copy.deepcopy(report)
+        snapshot.pop("cutoff_at", None)
+        report["snapshot"] = sha(packed(snapshot).encode())
         return report
 
-    def execute(self, action, payload=None, *, start=None, end=None, period="last7", key=None):
+    def execute(self, action, payload=None, *, start=None, end=None, period=None, key=None, review_type="custom"):
         need(action in ACTIONS, "Unsupported action")
         self.now = self.clock().astimezone(self.tz)  # Never cache time across operations.
         today = self.now.date().isoformat()
@@ -275,14 +285,15 @@ class Coach:
                         "latest_weight": (self.weight_rows() or [None])[-1],
                         "reminders_revision": self.reminders()["revision"]}
             if action == "measurements":
-                a, b = self.window(start, end, period)
+                a, b = self.window(start, end, period or "last7")
                 return {"ok": True, "start": a, "end": b, "weights": [r for r in self.weight_rows() if a <= r["date"] <= b],
                         "exercises": [r for r in self.exercise_rows() if a <= r["date"] <= b]}
             if action == "plans":
                 data = self.plans()
                 return {"ok": True, **data, "active": {k: self.active(data, k, today) for k in KINDS}}
             if action == "review":
-                return {"ok": True, **self.report(*self.window(start, end, period))}
+                chosen = period or {"daily": "today", "weekly": "last-week", "custom": "last7"}.get(review_type)
+                return {"ok": True, **self.report(*self.window(start, end, chosen), review_type=review_type)}
             if action == "reminders":
                 return {"ok": True, **self.reminders(), "native_status": "verify_with_gateway"}
             if action == "reminder-specs":
@@ -330,15 +341,17 @@ class Coach:
             return self.mutate_plan(action, p)
         if action == "review-save":
             a, b = self.window(p.get("start"), p.get("end"))
-            report = self.report(a, b)
+            report = self.report(a, b, p.get("review_type", "custom"))
             need(p.get("expected_snapshot") == report["snapshot"], "Review data changed; recompute before saving analysis")
             analysis = label(p.get("analysis"), "analysis", 20000)
             history = self.store.read("data/coach-reviews.json", {"version": 1, "entries": []})
             record = {"id": "review_" + uuid.uuid4().hex, "created_at": self.now.isoformat(), "report": report, "analysis": analysis}
             history["entries"].append(record)
             s = report["summary"]
-            path = f"data/reports/coach-review-{a}-{b}.md"
-            body = (f"# Coach review {a} — {b}\n\nID: {record['id']}\nTimezone: {self.tz_name}\n"
+            suffix = "" if report["review_type"] == "custom" else "-" + report["review_type"]
+            path = f"data/reports/coach-review{suffix}-{a}-{b}.md"
+            body = (f"# Coach {report['review_type']} review {a} — {b}\n\nID: {record['id']}\nTimezone: {self.tz_name}\n"
+                    f"Cutoff: {report['cutoff_at']}\nCoverage: recorded only; full-day completeness unverified.\n"
                     f"\nRecorded meal days: {s['logged_days']}/{s['period_days']}\n"
                     f"Average per logged day (not complete intake): {s['average_per_logged_day']}\n"
                     f"Weight days: {s['weight_days']}\nExercise minutes: {s['exercise_minutes']}\n"
@@ -350,16 +363,28 @@ class Coach:
             key = self.reminder_key(p.get("key"))
             patch = p.get("settings")
             need(isinstance(patch, dict), "settings patch required")
-            need(not set(patch) - {"enabled", "kind", "time", "weekdays", "route", "pause_until"}, "Unknown reminder settings")
+            need(not set(patch) - {"enabled", "kind", "time", "weekdays", "route", "pause_until", "review_type"}, "Unknown reminder settings")
             old = data["items"].get(key, {})
             setting = {**old, **patch}
             need(type(setting.get("enabled")) is bool, "enabled must be explicit boolean")
             need(p.get("confirmed") is True or setting["enabled"] is False, "Enabling/changing reminders requires user confirmation")
             need(setting.get("kind") in {"breakfast", "lunch", "dinner", "weight", "exercise", "review"}, "Unsupported reminder kind")
+            if setting["kind"] == "review":
+                # Old entries remain legacy rolling reviews; no silent schedule migration.
+                legacy = old.get("kind") == "review" and "review_type" not in old
+                need("review_type" in setting or legacy, "New review reminder requires explicit daily or weekly review_type")
+                if "review_type" in setting:
+                    need(setting["review_type"] in {"daily", "weekly"}, "review_type: daily or weekly")
+            else:
+                need("review_type" not in setting, "review_type applies only to review reminders")
             need(isinstance(setting.get("time"), str) and re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d", setting["time"]), "time must be HH:MM")
             weekdays = setting.get("weekdays")
             need(isinstance(weekdays, list) and weekdays and all(type(d) is int and 0 <= d <= 6 for d in weekdays), "weekdays: 0=Sun..6=Sat")
             setting["weekdays"] = sorted(set(weekdays))
+            if setting.get("review_type") == "daily":
+                need(setting["weekdays"] == list(range(7)), "Daily reviews run every local day")
+            if setting.get("review_type") == "weekly":
+                need(len(setting["weekdays"]) == 1, "Weekly reviews require one chosen weekday")
             route = setting.get("route")
             need(isinstance(route, dict) and set(route) == {"agent", "channel", "to"}, "Explicit agent/channel/to required (single resolved account)")
             setting["route"] = {k: label(v, "route." + k, 1000) for k, v in route.items()}
@@ -563,7 +588,7 @@ class Coach:
         return {"ok": True, "operations": actions, "native_status": "not_applied",
                 "next": "Use the available native scheduler tool; read each job back and reminder-bind. Never report scheduled before verification."}
 
-    def gate(self, key):
+    def gate(self, key, *, eligibility_only=False):
         key = self.reminder_key(key)
         settings = self.reminders()["items"].get(key)
         if not settings or not settings.get("enabled"):
@@ -591,6 +616,9 @@ class Coach:
             return {"ok": True, "send": False, "reason": "weight_already_recorded"}
         if kind == "exercise" and any(r["date"] == today for r in self.exercise_rows()):
             return {"ok": True, "send": False, "reason": "exercise_already_recorded"}
+        if kind == "review" and not eligibility_only:
+            from coach_review_reminders import reserve_reviews
+            return reserve_reviews(self, key, settings)
         return {"ok": True, "send": True, "kind": kind, "today": today, "timezone": self.tz_name,
                 "review_period": "last7" if kind == "review" else None,
                 "delivery": "final_text_via_native_announce", "delivered": False}
@@ -604,7 +632,8 @@ def main():
     parser.add_argument("--input", default="-")
     parser.add_argument("--start")
     parser.add_argument("--end")
-    parser.add_argument("--period", choices=["today", "yesterday", "last7", "last14", "this-week", "last-week"], default="last7")
+    parser.add_argument("--period", choices=["today", "yesterday", "last7", "last14", "this-week", "last-week"], default=None)
+    parser.add_argument("--review-type", choices=["daily", "weekly", "custom"], default="custom")
     parser.add_argument("--key", help="reminder-gate key")
     args = parser.parse_args()
     try:
@@ -618,8 +647,9 @@ def main():
             need(len(raw) <= 1_000_000, "Input too large")
             payload = json.loads(raw)
         if args.action not in {"measurements", "review"}:
-            need(not (args.start or args.end) and args.period == "last7", "Range flags apply only to measurements/review; mutation dates belong in JSON")
-        result = Coach(args.workspace, args.tz).execute(args.action, payload, start=args.start, end=args.end, period=args.period, key=args.key)
+            need(not (args.start or args.end) and args.period in (None, "last7"), "Range flags apply only to measurements/review; mutation dates belong in JSON")
+        need(args.action == "review" or args.review_type == "custom", "--review-type applies only to review; review-save type belongs in JSON")
+        result = Coach(args.workspace, args.tz).execute(args.action, payload, start=args.start, end=args.end, period=args.period, key=args.key, review_type=args.review_type)
         print(packed(result), end="")
         return 0
     except (ValueError, OSError, TypeError, KeyError, ImportError) as exc:

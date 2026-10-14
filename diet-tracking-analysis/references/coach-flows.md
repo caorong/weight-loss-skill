@@ -41,6 +41,10 @@ Later leftovers/amount-eaten corrections update the existing food by ID/revision
 4. Save likes/allergies/preferences separately via preferences-set. Read-modify-
    merge list values; a patch replaces the specified list, not appends blindly.
 5. Confirm what was actually persisted. Do NOT bootstrap reminders or exports.
+6. When discussing review setup, reuse the known IANA timezone or ask if missing;
+   ask separately about daily opt-in + local time and weekly opt-in + one weekday
+   + local time. There is no default opt-in. Either may stay off, and both may be
+   changed, paused or disabled independently. This must not block ordinary logging.
 
 Managed fields override only their explicitly named values. Legacy prose remains
 visible and unmodified. Do not interpret a missing health flag as a negative screen.
@@ -95,17 +99,78 @@ No notification job is created by plan generation or activation.
 
 ## Local review and adjustment
 
-`review --period last7` means the last seven local calendar dates, INCLUDING today,
-not seven complete 24-hour windows. `this-week` is Monday through today;
-`last-week` is the previous complete Monday..Sunday. Use explicit ranges for a
-particular period. Recompute the range each operation, not once per long session.
-For a two-week trend use last14. A single day can be partial.
+Choose the review type explicitly for the two regular retrospectives:
+
+- `review --review-type daily`: current local date only, default period today.
+  Scheduled daily reviews never silently switch to yesterday. A manually requested
+  historical single-day review is allowed for a late correction/backfill.
+- `review --review-type weekly`: default last-week, the previous complete local
+  Monday–Sunday. Even a Sunday evening run still covers the PREVIOUS complete
+  week, not the week that is still in progress. Monday is often convenient, but the
+  weekday/time belongs to the user.
+- `review --review-type custom` or an existing untyped review: preserve flexible
+  ranges and the legacy last7 default. last7 includes today, this-week means
+  Monday through today, and last14 covers fourteen local dates. These are custom
+  views, not substitutes for the scheduled daily or weekly contracts.
+
+Recompute local boundaries each operation. Explicit ranges are inclusive dates,
+not elapsed 24-hour windows; DST does not change which calendar dates are included.
+The cutoff is the report's collection time. Do not call any logged day complete
+unless the evidence establishes completeness. Zero records are not proven fasting.
 
 The report joins meals, weights, exercise, profiles and active goal BY DAY. Targets
 for old dates are not replaced by today's target. Logged-day averages exclude
 unrecorded days; they still may contain incomplete days. Do not infer adherence
 or a calorie deficit solely from these averages. It does not automatically subtract
 exercise from food calories. Known net burn and unknown sessions remain distinct.
+An intake-minus-target difference describes recorded intake versus a goal, not
+actual energy surplus/deficit, fat change or calories available to eat. Never
+double-count activity already included in a TDEE estimate.
+
+### Daily: what happened today, and food choices in context
+
+Keep the reply compact, with these facts before advice:
+
+1. Local date and cutoff; recorded meals and any missing/uncertain coverage.
+2. Recorded calories, protein/carbs/fat, and available effective targets. State
+   absent targets as unknown, never manufacture a target from an old/future plan.
+3. Completed exercise type/duration, estimated calories and source if known. Keep
+   gross/net values distinct; unknown estimates do not mean zero exercise.
+4. Up to 1–3 specific food tradeoffs grounded in today's actual records, when
+   useful. Name the recorded item/portion that supports each observation and
+   explain the tradeoff, considering fullness, protein/fiber/nutrient value and
+   known tastes/restrictions. An optional lower-energy alternative is hypothetical,
+   never a food the user already ate. Omit suggestions when evidence is too weak.
+
+The runtime's food_tradeoff_candidates is only an optional, narrow shortlist of
+explicit sweet-drink/dessert evidence, sorted by recorded calories. It is not a
+personalized optimizer or the full list of foods worth discussing. Reason over
+all recorded food_evidence, including other actual foods, with the user's needs
+and preferences. A proportional estimate is allowed when composition is unchanged:
+half a recorded portion is approximately half its estimated calories. Explain the
+portion/composition assumptions and uncertainty; do not invent substitute-food
+nutrition or imply precise savings. A null runtime saving is unknown, not zero.
+
+Examples of the reasoning pattern, not canned recommendations: a recorded sweet
+drink might have a less-sweet alternative that preserves the preferred flavor;
+an unusually large recorded accompaniment might admit a smaller amount while
+preserving the satisfying protein/vegetable components. Do not assume drinks,
+sauces, oil, snacks or skipped foods that were not recorded. A lower calorie count
+alone does not establish a better meal, and do not recommend reducing an already
+insufficient intake. Unknown food identity still follows the clarification gate.
+
+This is a retrospective, not tomorrow's to-do list. Do not write a new meal or
+exercise plan, call plan-save/plan-activate, prescribe compensatory fasting or
+extra exercise, or frame food as something to earn/burn off. If all that is known
+is one meal, say so and review that evidence without extrapolating a complete day.
+
+### Weekly: patterns supported by the completed week
+
+Lead with the date range and coverage. Summarize recorded intake versus each day's
+effective goal, supported weight trend, repeat food patterns and completed exercise.
+One instance is not a recurring pattern. Discuss exercise-plan adherence only when
+the effective plan can be compared meaningfully with adequate actual records;
+missing exercise logs are not proof that a planned session was skipped.
 
 Daily weight uses median of fasting readings if supplied; otherwise median of all
 readings. This is descriptive smoothing, not diagnosis. Two-week mean change compares only the seven dates ending at the report end
@@ -113,23 +178,45 @@ with the immediately preceding seven dates (end-13..end-7), even in a longer
 review. It needs at least three recorded days in EACH of those blocks; missing evidence yields null. The
 review_readiness flag is a software heuristic, NOT a clinical threshold.
 
+Do not present a null trend or readiness flag as clinical evidence. A single-week
+report may have no two-week comparison; request a separate custom last14 view only
+when useful, and label its different window. Sparse records call for uncertainty,
+not automatic target cuts or fabricated trends.
+
 Write a short interpretation of data limitations, repeatable habits and feasible
-next steps. `review-save` requires the exact report.snapshot and start/end. If any
+options. `review-save` requires the exact report.snapshot, review type and start/end
+for typed reports. If any
 underlying data changed, recalculate and rewrite the interpretation; do not attach
 stale commentary to a fresh snapshot. It produces a local Markdown report and
 retains the structured snapshot/version; chat can contain the report directly.
 
-Automatic workflow: a scheduled review can generate a draft proposal linked with
-basis_review_id. It must not activate it or lower targets automatically. For sparse
-records, prioritize logging/portion clarification and maintain the existing plan.
+Weekly workflow: a review may generate a draft proposal linked with basis_review_id.
+Explain the evidence, proposed change and uncertainty, and ask the user to confirm
+before activation. A draft does not change a target or training schedule. Daily
+reviews must not create these drafts. For sparse records, preserve the existing plan.
 For pain, extreme restriction or distress, prioritize safety/professional input.
 Only explicit confirmation activates an adjustment, usually today or a future day.
 Existing plans changing while a draft is pending invalidate its baseline.
 
+### Late records, corrections and repeated runs
+
+Attribute a late meal, weigh-in or completed workout to its occurrence date, not
+the date of the reply. A correction uses the original record ID/revision. Recompute
+and save a new affected report version when requested; keep the old snapshot for
+history. Regenerating a report must not repeat its scheduled notification or reset
+its notification reservation. Do not notify again just because late data changed
+the totals. Manual report reads/saves and scheduled notification eligibility are
+separate operations.
+
 ## Reminders
 
 Only after user opt-in with actual times, days, Agent and channel recipient, follow
-native-reminders.md. Food/weight/exercise reminders and a weekly review are supported.
+native-reminders.md. Food/weight/exercise reminders and independent daily/weekly
+reviews are supported. Daily runs on all seven weekdays; weekly runs on one chosen
+weekday. Legacy untyped review reminders keep last7 until explicit migration.
+When both are due at the same local time and route, one deterministic eligible
+leader reserves both and returns one message with separate daily/weekly sections.
+Do not invoke a second send or retry the follower as a standalone notification.
 No default meal reminder is created just because a user provided meal times.
 Pause/disable immediately updates the local gate; synchronize the actual native job
 and verify it too. Pausing suppresses output, but a still-enabled native job can

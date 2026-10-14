@@ -58,7 +58,7 @@ def atomic(path, raw):
 class Store:
     OWNED = {"health-profile.md", "health-preferences.md", "PLAN.md", "MEAL-PLAN.md",
              "EXERCISE-PLAN.md", "data/weight.json", "data/exercise.json",
-             "data/plans.json", "data/coach-reviews.json", "data/coach-reminders.json"}
+             "data/plans.json", "data/coach-reviews.json", "data/coach-reminders.json", "data/coach-review-deliveries.json"}
 
     def __init__(self, workspace):
         self.workspace = Path(workspace).expanduser().resolve()
@@ -78,7 +78,7 @@ class Store:
 
     def owned(self, relative):
         need(relative in self.OWNED or re.fullmatch(
-            r"data/reports/coach-review-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.md", relative),
+            r"data/reports/coach-review(?:-daily|-weekly)?-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.md", relative),
             f"Not a coach-owned destination: {relative}")
         return self.safe(relative)
 

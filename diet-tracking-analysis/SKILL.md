@@ -50,7 +50,9 @@ another operation could read it. Keep failed/pending input for the exact retry.
 - Profile or preference update -> profile-set/preferences-set with revision.
 - Actual weight/completed exercise -> weight/exercise operations in coach.py.
 - Goal/menu/workout plan -> draft locally, show text, confirm, then activate.
-- Review -> fresh local report -> save analysis -> optionally propose a draft.
+- Daily review -> today's recorded intake and completed exercise -> save a
+  retrospective, with no plan writes. Weekly review -> previous complete week ->
+  save analysis -> optionally propose a draft, never auto-activate it.
 - Reminder opt-in/change/stop -> local settings -> native scheduler reconciliation.
 
 A message may contain food, weight AND exercise. Execute all relevant writes
@@ -156,9 +158,39 @@ weight-loss prescriptions. Do not claim clinical credentials.
 
 Drafts do NOT change active targets. Only an explicitly confirmed plan ID may
 be activated. Use effective dates and recorded versions; do not rewrite historical
-targets. A stale draft or changed baseline requires fresh review. Proposal drafting
-can be automatic after review; numeric targets/training changes are NOT activated
-automatically. Low or incomplete data calls for better records, not forced cuts.
+targets. A stale draft or changed baseline requires fresh review. Weekly reviews
+may propose adjustment drafts; daily reviews must not call plan-save or
+plan-activate. Numeric targets/training changes are NOT activated automatically.
+Low or incomplete data calls for honest limitations, not forced cuts.
+
+## Daily and weekly retrospectives
+
+Read references/coach-flows.md for the review rubric. Use explicit
+`review --review-type daily` (today) or `review --review-type weekly` (last-week,
+the previous complete local Monday–Sunday). Do not replace daily with a rolling
+week, or weekly with the current unfinished week. Manual historical daily reviews
+are allowed for corrections; scheduled daily reviews always cover the current
+local date. Existing untyped/custom range requests remain supported.
+
+Daily: show today's RECORDED calories/macros against that day's effective goal,
+completed exercise duration and available calorie estimates separately, then the
+recording cutoff and missing/uncertain coverage. Give 1–3 concrete, evidence-based
+food tradeoffs only when the recorded foods support them: an omission, smaller
+amount or substitution, considering satiety, nutrition and known preferences.
+Distinguish a hypothetical alternative from food actually eaten. No invented food,
+forced quota of suggestions, tomorrow's tasks, meal/training plan, compensatory
+restriction or exercise. A partial day remains partial, even after dinner time.
+
+Weekly: summarize recorded coverage, supported weight trend, recurring food
+patterns and completed exercise. Discuss exercise adherence only with a relevant
+effective plan and adequate records; missing logs are not proven non-adherence.
+Plan adjustments are proposals, with explicit confirmation before activation.
+
+An intake-minus-target gap is NOT true energy surplus/deficit or predicted fat
+change. Do not subtract exercise calories to create a daily energy balance or add
+activity twice when a TDEE estimate already includes it. Unknown values stay
+unknown. Late records belong to their occurrence date; regenerate an affected
+report when requested without issuing the scheduled notification again.
 
 ## Reminders and scheduled reviews
 
@@ -167,11 +199,21 @@ upstream scripts, fixed author directories/models, credentials or localhost APIs
 Local settings saved != gateway task registered != message delivered. Verify
 native jobs by reading them back before binding/reporting registration.
 
+During setup, confirm IANA timezone and ask separately whether the user wants a
+daily review and at what local time, and a weekly review on which weekday/time.
+Both are opt-in, independently editable/disableable; declining either must not
+block food check-ins. Do not enable or register either merely by installing.
+
 When cron/automation calls this skill, its prompt carries reminder key + owner.
 Verify owner against the local manifest, call reminder-gate with the key, using
 fresh context/time. `send:false` -> output exactly NO_REPLY. `send:true` -> compose
-a short reminder; kind=review -> run/save a local last7 review, optionally draft
-adjustments. Output ONLY the final user text for announce delivery; do not call
+a short reminder; kind=review -> use the gate's returned review types and exact
+date ranges, run/save each report and join simultaneous eligible daily/weekly
+reviews in one clearly separated message. Existing untyped review settings retain
+their legacy last7 window until explicitly migrated. Review gates reserve a local
+notification key before announce to suppress repeated attempts; this is not proof
+of delivery and a failed attempt may be skipped. Never clear a reservation just to
+retry a send. Output ONLY the final user text for announce delivery; do not call
 message, curl or any second send tool. Do not mark delivered before confirmation.
 A disabled/paused/unsynced/already-recorded/out-of-window reminder is suppressed.
 Errors are errors, not SEND; never fall back to author services. Native delivery

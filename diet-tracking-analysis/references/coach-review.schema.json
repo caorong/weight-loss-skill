@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local coach review report and save input",
+  "description": "Documentation/interchange schema for enriched review output. Existing report fields are retained. Runtime enforces calendar/range/snapshot rules; model prose and user consent require the skill workflow and are not validated by this schema. Use #/$defs/reviewSaveInput for new caller save payloads.",
+  "type": "object",
+  "required": ["review_type", "start", "end", "timezone", "cutoff_at", "snapshot", "meal_days", "exercise_estimate", "coverage", "review_boundaries"],
+  "properties": {
+    "ok": {"const": true},
+    "review_type": {"enum": ["daily", "weekly", "custom"]},
+    "start": {"$ref": "#/$defs/localDate"},
+    "end": {"$ref": "#/$defs/localDate"},
+    "timezone": {"type": "string", "minLength": 1, "description": "IANA timezone."},
+    "cutoff_at": {"type": "string", "format": "date-time", "description": "Query observation time; excluded from the snapshot hash. A cutoff does not establish complete intake."},
+    "snapshot": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "meal_days": {"type": "array", "minItems": 1, "maxItems": 366, "items": {"$ref": "#/$defs/mealDay"}},
+    "food_tradeoff_candidates": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/tradeoff"}},
+    "exercise_estimate": {"$ref": "#/$defs/exerciseEstimate"},
+    "coverage": {
+      "type": "object",
+      "required": ["basis", "full_intake_confirmed", "calendar_window_closed", "complete_intake_days", "unrecorded_dates"],
+      "properties": {
+        "basis": {"const": "recorded_only"},
+        "full_intake_confirmed": {"const": false},
+        "calendar_window_closed": {"type": "boolean"},
+        "complete_intake_days": {"type": "null"},
+        "unrecorded_dates": {"type": "array", "items": {"$ref": "#/$defs/localDate"}}
+      }
+    },
+    "review_boundaries": {
+      "type": "object",
+      "required": ["automatic_target_change", "automatic_plan_change", "compensation_recommended", "tomorrow_tasks"],
+      "properties": {
+        "automatic_target_change": {"const": false},
+        "automatic_plan_change": {"const": false},
+        "compensation_recommended": {"const": false},
+        "tomorrow_tasks": {"type": "array", "maxItems": 0}
+      }
+    },
+    "weekly_review": {
+      "type": "object",
+      "required": ["calendar_week", "calendar_window_closed", "weight_trend", "recurring_observations", "exercise_adherence", "sufficient_data", "automatic_plan_change"],
+      "properties": {
+        "calendar_week": {"type": "boolean"},
+        "calendar_window_closed": {"type": "boolean"},
+        "weight_trend": {
+          "type": "object",
+          "required": ["status", "previous_start", "previous_end", "reviewed_start", "reviewed_end", "previous_weight_days", "reviewed_weight_days", "mean_change_kg", "limitations"],
+          "properties": {
+            "status": {"enum": ["descriptive_only", "insufficient_data"]},
+            "previous_start": {"$ref": "#/$defs/localDate"},
+            "previous_end": {"$ref": "#/$defs/localDate"},
+            "reviewed_start": {"$ref": "#/$defs/localDate"},
+            "reviewed_end": {"$ref": "#/$defs/localDate"},
+            "previous_weight_days": {"type": "integer", "minimum": 0},
+            "reviewed_weight_days": {"type": "integer", "minimum": 0},
+            "mean_change_kg": {"type": ["number", "null"], "description": "Difference of weekly means of daily medians; requires at least three dates per week. Not fat change or a causal estimate."},
+            "limitations": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "recurring_observations": {"type": "array", "items": {"type": "object", "required": ["kind", "dates", "count", "meaning"]}},
+        "exercise_adherence": {
+          "type": "object",
+          "required": ["status", "reason", "effective_plan_ids", "planned_sessions", "completion_rate", "limitations"],
+          "properties": {
+            "status": {"const": "not_assessable"},
+            "reason": {"enum": ["plan_schedule_is_unstructured", "no_confirmed_exercise_plan"]},
+            "effective_plan_ids": {"type": "array", "items": {"type": "string"}},
+            "planned_sessions": {"type": "null"},
+            "completion_rate": {"type": "null"},
+            "limitations": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "sufficient_data": {
+          "type": "object",
+          "required": ["recorded_intake_discussion", "complete_intake_comparison", "weight_trend", "exercise_adherence"],
+          "properties": {
+            "recorded_intake_discussion": {"type": "boolean"},
+            "complete_intake_comparison": {"const": false},
+            "weight_trend": {"type": "boolean"},
+            "exercise_adherence": {"const": false}
+          }
+        },
+        "automatic_plan_change": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"review_type": {"const": "weekly"}}, "required": ["review_type"]},
+      "then": {"required": ["weekly_review"]}
+    },
+    {
+      "if": {"properties": {"review_type": {"const": "daily"}}, "required": ["review_type"]},
+      "then": {"properties": {"meal_days": {"minItems": 1, "maxItems": 1}}}
+    }
+  ],
+  "$defs": {
+    "localDate": {"type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nutrients": {
+      "type": "object", "required": ["calories", "protein", "carbs", "fat"],
+      "properties": {
+        "calories": {"type": ["number", "null"]},
+        "protein": {"type": ["number", "null"]},
+        "carbs": {"type": ["number", "null"]},
+        "fat": {"type": ["number", "null"]}
+      }
+    },
+    "mealDay": {
+      "type": "object",
+      "required": ["date", "has_records", "totals", "effective_targets", "intake_minus_target", "target_comparison", "completeness", "exercise_estimate", "food_evidence", "food_tradeoff_candidates", "unknowns"],
+      "properties": {
+        "date": {"$ref": "#/$defs/localDate"},
+        "has_records": {"type": "boolean"},
+        "totals": {"$ref": "#/$defs/nutrients"},
+        "effective_targets": {"$ref": "#/$defs/nutrients"},
+        "intake_minus_target": {"$ref": "#/$defs/nutrients", "description": "Recorded intake minus that date's effective goal. Null if no records/target. Not true energy balance or predicted fat change."},
+        "target_comparison": {
+          "type": "object",
+          "required": ["basis", "energy_balance_known", "exercise_adjustment_applied"],
+          "properties": {
+            "basis": {"const": "recorded_intake_minus_effective_target"},
+            "energy_balance_known": {"const": false},
+            "exercise_adjustment_applied": {"const": false}
+          }
+        },
+        "completeness": {
+          "type": "object",
+          "required": ["status", "calendar_day_closed", "full_intake_confirmed", "missing_main_meal_types", "intake_window_end_exclusive"],
+          "properties": {
+            "status": {"enum": ["no_records", "unverified", "partial_day"]},
+            "calendar_day_closed": {"type": "boolean"},
+            "full_intake_confirmed": {"const": false},
+            "missing_main_meal_types": {"type": "array", "items": {"enum": ["breakfast", "lunch", "dinner"]}},
+            "intake_window_end_exclusive": {"type": "string", "format": "date-time"}
+          }
+        },
+        "exercise_estimate": {"$ref": "#/$defs/exerciseEstimate"},
+        "food_evidence": {"type": "array", "items": {"type": "object", "required": ["date", "meal_id", "food_id", "name", "quantity", "unit", "source", "portion_source", "nutrients"]}},
+        "food_tradeoff_candidates": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/tradeoff"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "exerciseEstimate": {
+      "type": "object",
+      "required": ["recorded_sessions", "recorded_minutes", "known_net_kcal", "known_gross_kcal", "net_unknown_sessions", "gross_unknown_sessions", "sources", "coverage", "calories_are_estimates", "added_to_intake_target", "subtracted_from_intake"],
+      "properties": {
+        "recorded_sessions": {"type": "integer", "minimum": 0},
+        "recorded_minutes": {"type": "number", "minimum": 0},
+        "known_net_kcal": {"type": ["number", "null"], "minimum": 0},
+        "known_gross_kcal": {"type": ["number", "null"], "minimum": 0},
+        "net_unknown_sessions": {"type": "integer", "minimum": 0},
+        "gross_unknown_sessions": {"type": "integer", "minimum": 0},
+        "sources": {"type": "array", "items": {"type": "string"}},
+        "coverage": {"const": "recorded_sessions_only"},
+        "calories_are_estimates": {"const": true},
+        "added_to_intake_target": {"const": false},
+        "subtracted_from_intake": {"const": false}
+      }
+    },
+    "tradeoff": {
+      "type": "object",
+      "required": ["date", "meal_id", "food_id", "food_name", "evidence_category", "recorded_quantity", "unit", "recorded_calories", "option", "estimated_calorie_saving", "scope", "condition"],
+      "properties": {
+        "date": {"$ref": "#/$defs/localDate"},
+        "meal_id": {"type": "string"},
+        "food_id": {"type": "string"},
+        "food_name": {"type": "string"},
+        "evidence_category": {"enum": ["explicitly_sweetened_drink", "dessert"]},
+        "recorded_quantity": {"type": "number", "exclusiveMinimum": 0},
+        "unit": {"enum": ["g", "ml", "serving"]},
+        "recorded_calories": {"type": "number", "exclusiveMinimum": 0},
+        "option": {"type": "string"},
+        "estimated_calorie_saving": {"type": "null"},
+        "scope": {"const": "optional_retrospective_tradeoff"},
+        "condition": {"type": "string"}
+      }
+    },
+    "reviewSaveInput": {
+      "type": "object", "required": ["request_id", "start", "end", "expected_snapshot", "analysis"], "additionalProperties": false,
+      "description": "New caller contract. Omitted review_type preserves legacy custom semantics; typed reports must supply their exact type. Runtime enforces single-day daily and complete Monday–Sunday weekly ranges plus the matching snapshot.",
+      "properties": {
+        "request_id": {"type": "string", "minLength": 1},
+        "review_type": {"enum": ["daily", "weekly", "custom"], "default": "custom"},
+        "start": {"$ref": "#/$defs/localDate"},
+        "end": {"$ref": "#/$defs/localDate"},
+        "expected_snapshot": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "analysis": {"type": "string", "minLength": 1, "maxLength": 20000}
+      }
+    }
+  }
+}
