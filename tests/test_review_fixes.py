@@ -82,6 +82,9 @@ class ReviewFixTests(unittest.TestCase):
             "met": 8.0, "distance": 5.0
         }]}}))
         row = self.c.execute("measurements", period="yesterday")["exercises"][0]
+        with self.assertRaisesRegex(coach.CoachError, "position-based"):
+            self.replace(row)
+        row = self.c.execute("measurements", period="yesterday")["exercises"][0]
         updated = self.replace(row)
         for key in ("category", "note", "met", "distance", "recorded_at", "index"):
             self.assertNotIn(key, updated)
