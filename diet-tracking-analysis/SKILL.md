@@ -73,6 +73,23 @@ not 100g. Check g versus ml, cooked versus raw, and whether oil is already inclu
 Unknown is not zero. Only consumed meals are saved; advice, menus and future plans
 are not actual intake. A shared table is not one person's meal.
 
+### Check-in intent is intake confirmation
+
+An explicit meal check-in ("记录午餐", "午餐打卡", "record lunch") or a
+clearly established intake check-in context counts as confirmation of consumption.
+Once food identity and usable portions are resolved, save once without requiring
+another "吃完了", "have you eaten?" or "shall I record this?" confirmation.
+A standalone food photo does NOT establish check-in intent. If intent is genuinely
+ambiguous, ask once whether this is an intake check-in or premeal advice; retain
+the answer while resolving food identity/portions rather than asking it again.
+Explicit "还没吃", future meals and premeal advice override check-in shorthand
+and prior check-in context: do not log them as consumed. Do not treat a dish-name
+or portion clarification as a change to that original advice/future intent.
+For follow-up leftovers or amount-eaten corrections, read the existing meal/food
+IDs and revision, then update that record (or delete a wholly uneaten item),
+never add a duplicate meal. A genuinely new meal still gets its own record.
+Read the intent decision order in references/standalone-flow.md.
+
 ### Food identity confirmation takes priority
 
 **食物身份不确定时先询问，不受打卡免确认规则影响。**

@@ -54,6 +54,44 @@ health fixtures or photos in the Git repository.
 "${RUN[@]}" add --workspace "$WORKSPACE" --tz "$TZ" --input "$REQUEST_FILE"
 ```
 
+## Intent decision order: confirm once, then resolve food
+
+Apply these rules to the whole message and relevant pending conversation, not
+isolated keywords, in this order:
+
+1. Explicit not-yet-eaten, future or premeal/advice intent takes precedence over
+   "记录午餐"/"午餐打卡" shorthand and any prior intake check-in context.
+   "午餐打卡，还没吃，先看看搭配" is advice only; do not write consumed intake.
+2. Otherwise an explicit meal check-in ("记录午餐", "午餐打卡", "record lunch")
+   or a clearly established intake check-in context confirms consumption. Resolve
+   food identity and usable portions, then save once. Do not require another
+   "吃完了" or ask "have you eaten?" / "shall I record this?" after resolution.
+   Reasonable labelled portion estimates suffice; exact grams are not required.
+3. A standalone food photo, a dish name or a calorie question alone is not a
+   check-in. Answer clear advice without logging. For genuinely ambiguous intent,
+   ask once: "这是饮食打卡，还是吃前想看看建议？" Keep that answer for this meal;
+   do not restart intent confirmation after an identity or portion answer.
+
+Identity uncertainty still requires clarification even when intake intent is
+confirmed. These are separate gates; a check-in never licenses guessed foods.
+Keep original intent/date during short clarification replies (including "半盘"
+or "是豆腐"). Only an explicit change such as "现在已经吃了，帮我记上" changes
+advice to a check-in; use the newly stated actual eating date, clarifying if needed.
+If there is no useful quantity estimate, ask how much of the identified food
+was eaten, rather than asking a redundant yes/no consumption question.
+
+After a saved meal, "米饭剩了一半" corrects the original item. Read its current
+IDs/revision, determine the new consumed amount relative to the original portion,
+and use `update`/`scale` on that food, not `add` for the meal. If an earlier edit
+already changed quantity, compute the scale against the CURRENT quantity; do not
+blindly halve it again. Use `delete` for a wholly uneaten item, never a zero-quantity
+placeholder. Use a new correction request ID and reuse it only for exact retries.
+If the referenced meal or amount is ambiguous, ask one targeted correction question.
+
+Acceptance scenarios: `evals/meal-checkin-intent.json`. Offline contract checks
+and ledger regressions do not execute a live conversational model or prove its
+intent classification; run these scenarios with the deployed model separately.
+
 ## Food identity gate before calorie estimation or writes
 
 **Identity clarification overrides check-in auto-save.** A user's instruction to
@@ -92,7 +130,9 @@ against THIS pending meal. A reply containing only a dish name is a clarificatio
 not automatically another meal, a new preference, or a new food-only check-in.
 
 After resolution, combine the earlier evidence and the user's answer, estimate
-only the unresolved/corrected item, and submit the complete meal once. Use the
+only the unresolved/corrected item, and submit the complete meal once ONLY if
+the original intent was a consumed check-in. Do not request another "吃完了".
+For advice or future intent, answer without writing intake. Use the
 original resolved ISO eating date even if the clarification arrives after
 midnight; the reply date is not the eating date. Allocate a new mutation request
 ID when forming new input. Only transport retries reuse the exact submitted

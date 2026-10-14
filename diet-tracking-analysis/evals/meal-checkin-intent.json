@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "purpose": "Manual/live-model acceptance scenarios; not executed by offline contract tests. Synthetic text only, no actual image fixtures.",
+  "cases": [
+    {
+      "id": "explicit_checkin",
+      "user": "记录午餐。",
+      "observation": "Foods identified; portions reasonably estimated.",
+      "expect": "Save once without requiring 吃完了.",
+      "forbid": [
+        "Ask have you eaten again"
+      ]
+    },
+    {
+      "id": "established_checkin",
+      "user": "〔食物照片〕",
+      "observation": "Current conversation clearly establishes this is an intake check-in.",
+      "expect": "Save once after resolving foods/portions.",
+      "forbid": [
+        "Require a second consumption confirmation"
+      ]
+    },
+    {
+      "id": "bare_photo",
+      "user": "〔食物照片〕",
+      "observation": "No check-in context or intent.",
+      "expect": "Ask once whether check-in or advice; no write yet.",
+      "forbid": [
+        "Assume all photos are intake"
+      ]
+    },
+    {
+      "id": "ambiguous_then_checkin",
+      "user": "打卡。",
+      "observation": "Answers the one intent question; identity question remains.",
+      "expect": "Retain confirmed intake intent, clarify identity, then save once.",
+      "forbid": [
+        "Repeat the intent question after identity answer"
+      ]
+    },
+    {
+      "id": "explicit_premeal_override",
+      "user": "午餐打卡，还没吃，先看看搭配。",
+      "observation": "Prior conversation normally uses photos to check in.",
+      "expect": "Give advice without logging.",
+      "forbid": [
+        "Let check-in shorthand override not yet eaten"
+      ]
+    },
+    {
+      "id": "future_override",
+      "user": "记录明天午餐：米饭和豆腐。",
+      "observation": "Explicit future meal.",
+      "expect": "Treat as future plan, no consumed record.",
+      "forbid": [
+        "Log today or tomorrow as consumed"
+      ]
+    },
+    {
+      "id": "unknown_identity",
+      "user": "记录午餐。",
+      "observation": "One dish is unidentified.",
+      "expect": "Ask its identity and hold whole meal by default.",
+      "forbid": [
+        "Guess food because intent confirmed"
+      ]
+    },
+    {
+      "id": "short_answer_after_midnight",
+      "user": "是豆腐。",
+      "observation": "Answers pending check-in identity question after midnight; original date known.",
+      "expect": "Merge with original foods and save once on original eating date, without 吃完了.",
+      "forbid": [
+        "New meal for tofu",
+        "Use reply date"
+      ]
+    },
+    {
+      "id": "advice_clarification",
+      "user": "是豆腐，半盘。",
+      "observation": "Answers identity/portion question for premeal advice.",
+      "expect": "Answer advice without logging; retain original intent.",
+      "forbid": [
+        "Treat resolved foods as intake consent"
+      ]
+    },
+    {
+      "id": "portion_clarification",
+      "user": "半盘。",
+      "observation": "Answers quantity question for an identified food in pending intake check-in.",
+      "expect": "Use half plate and save original meal once without another consumption question.",
+      "forbid": [
+        "Log half plate as a separate meal"
+      ]
+    },
+    {
+      "id": "leftovers_correction",
+      "user": "米饭剩了一半。",
+      "observation": "Original lunch saved; rice has not previously been scaled.",
+      "expect": "Read IDs/revision, update rice to half original portion using new correction ID.",
+      "forbid": [
+        "Add another lunch",
+        "Scale every dish"
+      ]
+    },
+    {
+      "id": "already_corrected_leftovers",
+      "user": "我说的是原来那碗还剩一半。",
+      "observation": "Original rice 150g; current record corrected to 100g.",
+      "expect": "Correct to 75g using scale 0.75 against current amount.",
+      "forbid": [
+        "Blindly halve current 100g to 50g"
+      ]
+    },
+    {
+      "id": "wholly_uneaten",
+      "user": "刚才那碗米饭其实没吃。",
+      "observation": "Original lunch recorded with rice and vegetables.",
+      "expect": "Delete rice by ID/revision; retain vegetables.",
+      "forbid": [
+        "Store zero quantity",
+        "Add another meal"
+      ]
+    },
+    {
+      "id": "explicit_change_to_consumed",
+      "user": "现在已经吃了，帮我记上。",
+      "observation": "Earlier resolved meal was premeal advice; actual eating date now clear.",
+      "expect": "Record once with actual eating date supplied by new consumption statement.",
+      "forbid": [
+        "Keep advice permanently unloggable",
+        "Use stale planned eating date"
+      ]
+    }
+  ]
+}

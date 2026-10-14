@@ -7,6 +7,13 @@ Python handles records, calculations, version selection and local verification.
 
 ## Food check-ins and pending clarification
 
+Explicit meal check-ins or clearly established intake check-in context confirm
+consumption; after identity/portion resolution, save once without another
+"吃完了" confirmation. Explicit not-yet-eaten, future or premeal advice overrides
+check-in shorthand/context. A standalone photo is not automatically a check-in;
+ask once if intent is ambiguous, and retain the answer across clarifications.
+Follow the intent decision order in references/standalone-flow.md.
+
 Before estimating or saving food, apply SKILL.md's food identity gate and
 references/standalone-flow.md. Identity uncertainty overrides check-in auto-save;
 "record lunch" is not permission to invent the dish. Ask a short identity question
@@ -16,10 +23,13 @@ Ordinary portion uncertainty for identified food can use a labelled estimate.
 When the next message is a reply to the pending question, merge the answer with
 the original meal and intent before routing it as a new check-in or preference.
 Use the original eating date (including a reply after midnight), not the fresh
-context's today for this pending meal. Save once after resolution; if known items
+context's today for this pending meal. Save once after resolution only for a
+consumed check-in; advice/future intent stays unlogged. If known items
 were already saved at the user's request, append only the missing item by ID.
 An unanswered question stays unresolved. If pending context was lost, ask for
 the original meal/photo/date; there is no persistent pending-meal registry.
+Later leftovers/amount-eaten corrections update the existing food by ID/revision
+(or delete wholly uneaten items); they do not add a duplicate meal.
 
 ## First use / profile update
 
