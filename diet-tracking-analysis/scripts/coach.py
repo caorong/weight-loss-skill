@@ -146,18 +146,44 @@ class Coach:
                          "value": weight_kg(row["value"], row.get("unit", "kg")), "unit": "kg", "storage_key": key})
         return sorted(rows, key=lambda r: (r["date"], r.get("observed_at") or r.get("recorded_at") or r["storage_key"]))
 
-    def exercise_rows(self):
+    def exercise_data(self, *, normalize=False):
+        # Caller holds the coach lock. Validate the whole file before assigning
+        # identities; existing (including legacy-shaped) IDs are never rewritten.
         raw = self.store.read("data/exercise.json", {})
-        rows = []
+        ids, missing = set(), []
         for day, block in raw.items():
             iso_day(day)
             need(isinstance(block, dict) and isinstance(block.get("exercises"), list), "Unsupported exercise schema")
-            for i, row in enumerate(block["exercises"]):
+            for row in block["exercises"]:
                 need(isinstance(row, dict), "Invalid exercise row")
                 numeric(row.get("duration_min"), "duration_min", 0.1, 1440)
-                rows.append({**row, "id": row.get("id", f"legacy_exercise_{day}_{i}"), "revision": row.get("revision", 0),
-                             "date": day, "index": i})
-        return rows
+                if "id" not in row:
+                    missing.append(row)
+                else:
+                    need(isinstance(row["id"], str) and row["id"].strip(), "Invalid exercise ID; reconcile explicitly")
+                    need(row["id"] not in ids, "Duplicate exercise ID; reconcile explicitly")
+                    ids.add(row["id"])
+        if normalize and missing:
+            for row in missing:
+                identity = "exercise_" + uuid.uuid4().hex
+                while identity in ids:
+                    identity = "exercise_" + uuid.uuid4().hex
+                row["id"] = identity
+                ids.add(identity)
+            content = packed(raw)
+            # Separate from the requested mutation: even a rejected/stale request
+            # must leave IDs durable, and recovery must replay these exact UUIDs.
+            self.store.commit("exercise-id-normalize:" + uuid.uuid4().hex, sha(content.encode()),
+                              {"data/exercise.json": content},
+                              {"action": "exercise-id-normalize", "assigned_ids": len(missing)})
+        return raw
+
+    def exercise_rows(self, raw=None):
+        raw = self.exercise_data() if raw is None else raw
+        # Positional IDs are temporary read references only; mutations reject them.
+        return [{**row, "id": row.get("id", f"legacy_exercise_{day}_{i}"),
+                 "revision": row.get("revision", 0), "date": day, "index": i}
+                for day, block in raw.items() for i, row in enumerate(block["exercises"])]
 
     def reminders(self):
         data = self.store.read("data/coach-reminders.json", {"version": 1, "revision": 0, "items": {}})
@@ -430,7 +456,7 @@ class Coach:
         return out
 
     def mutate_exercise(self, action, p):
-        raw = self.store.read("data/exercise.json", {})
+        raw = self.exercise_data(normalize=True)
         if action == "exercise-add":
             day = self.day(p.get("date"))
             items = p.get("items")
@@ -441,7 +467,11 @@ class Coach:
             block["exercises"].extend(new)
             result = {"date": day, "exercises": new}
         else:
-            rows = [r for r in self.exercise_rows() if r["id"] == p.get("id")]
+            identity = p.get("id")
+            need(not (isinstance(identity, str) and re.fullmatch(r"legacy_exercise_\d{4}-\d{2}-\d{2}_\d+", identity)),
+                 "Ambiguous position-based exercise ID; query latest UUIDs first. "
+                 "If this ID is stored, reconcile it explicitly before retrying")
+            rows = [r for r in self.exercise_rows(raw) if r["id"] == identity]
             need(len(rows) == 1, "Unknown exercise ID; query first")
             row = rows[0]
             revision(p, row)

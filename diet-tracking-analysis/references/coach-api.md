@@ -78,6 +78,23 @@ flags whether it covers every item. Reports count unknown net estimates explicit
 exercise-update: request_id,id,expected_revision,item (complete replacement except
 retained metadata). exercise-delete: request_id,id,expected_revision. Read first.
 
+Legacy records without an `id` receive a persistent `exercise_<UUID>` on their first
+exercise mutation, under the coach lock. Existing IDs and other fields are
+preserved; missing revisions still read as 0. The identity normalization is backed
+up and atomically journaled separately before the requested mutation, so IDs remain
+stable even if that mutation fails or is interrupted. Measurement/review/reminder
+reads do not perform normalization; before the first exercise write they may return
+temporary `legacy_exercise_YYYY-MM-DD_INDEX` references. Always address
+updates/deletes by a persisted ID, never by array index.
+
+Old `legacy_exercise_YYYY-MM-DD_INDEX` position-based mutation requests first
+normalize missing IDs, then reject the requested change; query again for the
+persisted UUID and revision before sending a new mutation. If an older
+version already stored such a position-shaped ID, it is preserved but cannot safely
+be used for update/delete: explicit identity reconciliation is required. Duplicate,
+empty or non-string stored IDs also stop exercise access without rewriting the file;
+they require explicit reconciliation rather than automatic reassignment.
+
 ## Plan draft / activation
 
 ```json
@@ -123,7 +140,10 @@ operations and never contacts the network. Do not mistake its output for executi
 
 coach.py owns profile sections, measurements, plans, reviews, reminder settings.
 Writes use data/.coach.lock and data/coach-state.json (version/requests/pending).
-All changes in ONE coach operation are recovered together before the next operation.
+All changes in ONE transaction are recovered together before the next operation.
+Legacy exercise identity normalization is its own transaction and can remain saved
+even when the subsequent requested operation fails. It has a separate internal
+receipt and cannot be mistaken for successful completion of that operation.
 Preimages are checked and backed up under data/coach-backups/TXID/RELATIVE_PATH.
 No operation writes USER.md/AGENTS.md or gateway config. Symlinks are rejected.
 Meal ledger keeps its existing separate journal/lock; report lock order is coach
