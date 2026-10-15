@@ -11,6 +11,7 @@ Use uv with the project in `diet-tracking-analysis/`; no global pip installs.
 This file guides the installer/developer AI. It is NOT a target Agent identity:
 never copy it over the user's workspace AGENTS.md, USER.md, or existing policy.
 
-Release note: GitHub v5 branch is feat/local-coach-v5, based on main after
-PR #1 (af51bc2). Use this branch/commit until its PR is merged. Verify v5
-coach files and read AI-INSTALL.md before installing.
+Install current main or the explicitly requested commit. For unmerged PR tests,
+use that PR's verified head rather than an obsolete feature branch. Verify the
+required coach files and read AI-INSTALL.md before installing. Seven-choice
+onboarding requires scripts/coach_reminder_onboarding.py in the installed entry.

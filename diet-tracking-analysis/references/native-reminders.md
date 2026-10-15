@@ -8,17 +8,84 @@ and the existing mobile channel must actually be available for reminders.
 
 ## 1. Consent and local configuration
 
-During setup, confirm the existing IANA timezone (ask only if missing/unclear),
-then ask independently: daily review enabled or off, and local time if enabled;
-weekly review enabled or off, and one weekday/local time if enabled. Neither opt-in
-is implied by installing, creating a plan or enabling the other. The user can edit,
-pause or disable either later without affecting the other or ordinary check-ins.
-Only after user requests reminders, obtain the exact times, weekdays and resolved
-recipient. Query actual runtime routing: explicit Agent, channel and recipient.
-Do not guess from an Agent name, default to Slack or use channel=last. The first
-version supports a single resolved bot account/conversation; if the channel needs
-additional accountId/thread routing, stop and adapt the schema rather than dropping
-those fields or sending to the wrong chat. Never auto-enable at onboarding.
+At the first interactive initialization, explicitly offer all seven independent
+options in one compact checklist: daily review, weekly review, breakfast, lunch,
+dinner, weight and exercise reminders. The user may select a subset, enable all,
+decline all, or skip setup. These are choices, not default enabled schedules.
+On a resumed/mixed setup, ask only returned unasked entries; display already
+configured categories as existing settings and leave answered choices alone.
+Installation is noninteractive and creates no choices, schedules or native jobs.
+If installation was headless, ask at the first suitable interactive setup turn.
+Ordinary food/weight/exercise logging must keep working without an answer.
+
+### Persist the choices before collecting schedules
+
+Read `reminder-onboarding` (also returned as context.reminder_onboarding).
+It covers seven canonical option IDs: daily-review, weekly-review, breakfast,
+lunch, dinner, weight and exercise. Store changes with reminder-onboarding-set,
+a fresh request_id and the latest shared reminders revision. For example, after
+actually showing all seven choices (never before an unsent question):
+
+```json
+{"request_id":"setup:offered:1","expected_revision":0,"offered":["daily-review","weekly-review","breakfast","lunch","dinner","weight","exercise"]}
+```
+
+An explicit partial answer can then be saved without inventing any schedule:
+
+```json
+{"request_id":"setup:answer:1","expected_revision":1,"confirmed":true,"decisions":{"daily-review":"accepted","weekly-review":"declined","exercise":"skipped"}}
+```
+
+These are synthetic examples, not user consent. `confirmed:true` attests an
+explicit answer. Use accepted/declined/skipped only for the options the answer
+actually covers. “Enable all” during first setup expands to seven accepted entries
+in one decisions object; “disable all” to seven declined entries; “skip for now”
+to skipped for all still-open choices. Keep already answered choices unless the
+user explicitly changes them. On mixed/resumed setup, an “all” answer applies
+only to the still-open choices actually listed in that question, not existing
+configured/declined/skipped choices. Clarify if its scope is ambiguous.
+Do not interpret silence as skipped or declined.
+An exact retry reuses the same request_id and payload; a new answer uses fresh
+context/revision and a new ID. A stale revision must be re-read, never forced.
+
+- unasked: has not yet been offered; include in initial setup.
+- offered / awaiting_answer: already presented, unanswered, still off. Resume
+  only when the user continues setup, not as a repeated question on every meal.
+- accepted / needs_configuration: opted in but still no enabled setting or job.
+  Preserve this choice while collecting missing details; do not re-ask opt-in.
+- declined or skipped: off, excluded from automatic offers. Revisit only when the
+  user asks to change reminders or resume a deliberately skipped setup.
+- configured: existing settings are authoritative, including disabled entries.
+  Use configured_keys to edit actual keys; do not create canonical-key duplicates.
+- migration_required: an untyped legacy review exists. Preserve its settings and
+  last7 semantics; ask for explicit migration only when requested, never silently
+  add daily/weekly jobs beside it. legacy_review_keys identifies these entries.
+
+The optional onboarding choices live in data/coach-reminders.json beside items,
+not in native job specs. Choice changes never alter existing settings/bindings.
+Read/context/upgrade never write or migrate choices. There is no automatic
+“restart onboarding” operation. Existing categories cannot be changed through
+reminder-onboarding-set; use an explicitly requested reminder-set edit instead.
+If suggested_key is null, that key is occupied: choose an unused explicit key,
+never overwrite a different reminder. Legacy migration is also an explicit edit.
+
+### Confirm a complete schedule, then configure
+
+Once choices are known, summarize and obtain confirmation of the selected local
+times, days, IANA timezone and destination. Daily review runs every day; weekly
+review needs one weekday; exercise needs explicit exercise days. For meals and
+weight, confirm the days too (all seven is permitted, not assumed). Reuse known
+meal/exercise times or timezone as proposals; they are not permission to schedule.
+The user may approve selection plus all complete details in one message; do not
+ask the same confirmation again. With incomplete details, leave accepted choices
+pending and do not call reminder-set or the scheduler.
+
+Query actual runtime routing: explicit Agent, channel and recipient. Do not guess
+from an Agent name, default to Slack or use channel=last. Confirm the resolved
+destination. The first version supports a single resolved bot account/conversation;
+if the channel needs additional accountId/thread routing, stop and adapt the schema
+rather than dropping those fields or sending to the wrong chat. Never auto-enable
+at onboarding. A decline/skip does not need fabricated times or a route.
 
 Use reminder-set, expected_revision from `reminders`/context:
 
@@ -79,6 +146,11 @@ Read current revision and merge only requested changes. Pause/disable preserves
 history; no blanket deletion of other tasks.
 
 Local save returns native_status=sync_required. It is NOT "reminder is scheduled".
+After an interrupted setup, configured means only that local settings exist.
+Inspect specs/bindings and re-LIST native jobs to resume unverified registration,
+even when needs_configuration is empty. Do not restart opt-in or re-add matching
+jobs; bind the real read-back. Always verify live native status before claiming
+registration, including previously bound entries.
 
 ## 2. Reconcile native jobs, then verify
 

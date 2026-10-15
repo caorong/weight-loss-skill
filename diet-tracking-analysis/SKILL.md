@@ -199,10 +199,37 @@ upstream scripts, fixed author directories/models, credentials or localhost APIs
 Local settings saved != gateway task registered != message delivered. Verify
 native jobs by reading them back before binding/reporting registration.
 
-During setup, confirm IANA timezone and ask separately whether the user wants a
-daily review and at what local time, and a weekly review on which weekday/time.
-Both are opt-in, independently editable/disableable; declining either must not
-block food check-ins. Do not enable or register either merely by installing.
+At first interactive initialization, use context.reminder_onboarding (or
+reminder-onboarding) and explicitly offer ALL SEVEN independent choices: daily
+review, weekly review, breakfast, lunch, dinner, weight and exercise reminders.
+On resumed/mixed setup, ask only unasked entries; display configured categories
+as already set and preserve answered choices. Ask compactly in one checklist,
+allowing a subset, “enable all”, “disable all” or “skip for now”; do not require seven separate conversation turns. Record offered
+only after actually presenting the question. Do not interrupt an urgent check-in
+or block ordinary logging if the user does not answer.
+
+Read the persisted choices every time setup resumes. Unasked/offered/declined/
+skipped choices stay off; accepted choices also stay off until configured.
+Record only explicitly answered options with reminder-onboarding-set. “Enable
+all” expands to the seven listed choices during new setup; on a resumed setup it
+covers only the still-open options actually listed. A partial answer must leave
+other choices unchanged. Silence is not consent or a refusal. Do not keep
+re-asking declined/skipped options or restart this checklist on every check-in.
+The user can explicitly revisit choices later. Offered options can be resumed
+when the user continues setup; accepted options need configuration, not another
+opt-in question.
+
+After selection, confirm each enabled option's local time and days, the shared
+IANA timezone and resolved Agent/channel/recipient before reminder-set. Weekly
+review needs one weekday; exercise needs the chosen exercise days; daily review
+runs every day. Reuse known preferences as proposed values, never as consent.
+A batch selection does not approve example schedules or create native jobs.
+Use the full flow and payloads in references/native-reminders.md. Existing
+configured reminders (including disabled/arbitrary-key entries) remain unchanged;
+legacy untyped reviews require explicit migration. Local configured state does
+not prove registration: resume native list/reconcile/read-back/bind after an
+interruption even if no choices need configuration. Never re-onboard or replace
+these just because the skill was upgraded.
 
 When cron/automation calls this skill, its prompt carries reminder key + owner.
 Verify owner against the local manifest, call reminder-gate with the key, using

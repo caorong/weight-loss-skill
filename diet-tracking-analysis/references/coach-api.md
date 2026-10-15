@@ -13,7 +13,7 @@ for retries. Receipts can be stale: after duplicate=true read current data.
 
 - context: recomputes now, today/yesterday, last7/last14/this_week/last_week;
   returns profile/preferences/revisions, active and future confirmed plans, latest
-  weight, reminder revision, unique request_token and request_file.
+  weight, reminder revision, reminder_onboarding choice/progress view, unique request_token and request_file.
 - measurements [--period today|yesterday|last7|last14|this-week|last-week]
   [--start YYYY-MM-DD --end YYYY-MM-DD]: reads weight and exercise.
 - plans: all immutable plan versions + active versions selected by local date.
@@ -205,6 +205,33 @@ field for that comparison, and name the window accurately.
 
 ## Reminder APIs
 
+reminder-onboarding is a read-only seven-option view, also in context. It returns
+revision (shared with reminders), options keyed by daily-review/weekly-review/
+breakfast/lunch/dinner/weight/exercise, unasked, awaiting_answer,
+needs_configuration and legacy_review_keys. Each option contains state, recorded
+choice, configured_keys, enabled (actual desired settings only) and suggested_key.
+accepted means pending configuration, never enabled. configured reflects existing
+settings, including disabled ones; migration_required preserves untyped legacy
+reviews. Mapping uses kind/review_type, not an assumed key. No read migration.
+
+reminder-onboarding-set is a normal transactional mutation: request_id,
+expected_revision, optional offered array and optional decisions object. Offered
+options must have been presented and cannot overwrite answered choices. decisions
+maps option IDs to accepted/declined/skipped and requires confirmed=true from an
+explicit user answer. Batch all expands to seven entries, never a wildcard. A
+partial answer leaves omitted entries unchanged; no defaults for silence.
+An option cannot appear in offered and decisions together. Existing configured or
+legacy-review categories reject onboarding edits; use reminder-set after explicit
+user instructions. Unknown options/states and stale revisions fail atomically.
+
+Choices are stored in an optional onboarding={version:1, choices:{...}} field in
+data/coach-reminders.json. Each stored choice has state, updated_at and request_id;
+absent entries mean unasked. The result returns schedules_changed=false and
+native_status=not_applied. No choice mutation writes items or touches native jobs.
+Re-read after retries: an old receipt is not the current setup view. Onboarding
+state is not scheduler authorization. Complete times/days/timezone/route confirmation
+is still required for reminder-set; accepted choices alone yield no specs.
+
 See native-reminders.md for full examples and the actual Gateway handshake.
 Local reminder-set and reminder-bind require mutation request IDs. sync-plan is
 read-only: it consumes a complete gateway jobs snapshot, returns proposed native
@@ -229,7 +256,7 @@ eligibility guarantee is not an exactly-once native transport guarantee.
 
 ## Transaction and maintenance boundaries
 
-coach.py owns profile sections, measurements, plans, reviews, reminder settings
+coach.py owns profile sections, measurements, plans, reviews, reminder onboarding choices/settings
 and review notification reservations (not native delivery receipts).
 Writes use data/.coach.lock and data/coach-state.json (version/requests/pending).
 All changes in ONE transaction are recovered together before the next operation.

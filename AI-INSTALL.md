@@ -1,8 +1,9 @@
 # AI 安装与验收入口
 
-**当前 GitHub v5 分支：** `feat/local-coach-v5`，基于已合并 PR #1 的 `main`（`af51bc2`）。
+**安装来源：** `main` 的当前源码或用户明确指定的提交；测试未合并 PR 时使用已核实的 PR head。
 先确认 checkout 含 `diet-tracking-analysis/scripts/coach.py`、`diet-tracking-analysis/references/coach-api.md` 且技能版本为 5.0.0。
-本次 PR 合并前，旧 `main` / `feat/standalone-native-vision` 不代表 v5；不要拿旧版替代。
+七项提醒初始化还需 `scripts/coach_reminder_onboarding.py` 及 `reminder-onboarding` 命令；
+若缺失，说明目标提交尚未包含该功能，不要将旧功能分支描述为最新版。
 
 适用：用户委托你把本 fork 的独立饮食记录技能安装到其 OpenClaw。
 先阅读本文件、README、安装器及技能说明，再执行。只安装一个独立入口，包含现有视觉模型 + 本地资料/饮食/体重/运动/计划/复盘/提醒配置，
@@ -47,8 +48,8 @@ uv python install 3.13
 
 ## 3. 安装
 
-在 `feat/local-coach-v5` 分支的源码目录执行，也可使用相同版本的安装包。
-本次 PR 合并前不要用旧 main 替代 v5。将 workspace 和时区替换为步骤 1 的真实值：
+在已核实的 `main`／指定提交的源码目录执行，也可使用相同版本的安装包。
+测试未合并改动时先 checkout 对应 PR head；将 workspace 和时区替换为步骤 1 的真实值：
 
 ```bash
 uv run --locked --project diet-tracking-analysis python scripts/install-standalone.py \
@@ -91,12 +92,20 @@ OpenClaw 加载状态、视觉状态、模型计划生成状态、原生 schedul
 
 ## 5. 原生提醒验收（默认不创建）
 
-先读安装后 references/native-reminders.md。设置时复用并确认 IANA 时区，分别询问：
-是否开启每日复盘及当地时间；是否开启每周复盘及一个星期几／当地时间。
-两项都自愿，任何一项可单独编辑、暂停或关闭；不回答或拒绝不阻碍记餐。
-不要把文档示例时间当默认授权，也不要在本次代码升级／验收中激活真实任务。
-只在用户明确请求了时间/星期/投递对象后，
-保存本地设置，用实际原生 scheduler 列出完整任务、reconcile、执行差异、读回核实再 bind。
+先读安装后 references/native-reminders.md。首次交互初始化必须明确列出七项独立选择：
+日复盘、周复盘、早餐提醒、午餐提醒、晚餐提醒、体重提醒、运动提醒。
+可一条清单统一询问，允许部分开启、全部开启、全部不开或暂时跳过，不必逐项问七轮。
+用 reminder-onboarding / context.reminder_onboarding 读取进度；问题实际展示后记录 offered，
+按明确回答用 reminder-onboarding-set 保存 accepted / declined / skipped，不推断未回答项。
+未回答、拒绝、跳过都不启用；选择开启后也先保持待配置。明确拒绝／跳过后不反复追问，
+日常记餐不重启问卷、不被阻碍。用户主动继续设置时从保存的选择继续。
+全部开启只代表选中七项，随后确认各项当地时间、IANA 时区、投递对象；
+周复盘确认星期几，运动提醒确认运动日，餐次和体重提醒也确认适用日期。
+复用已有偏好作建议值，不能把文档示例或已知作息当授权。完整确认后才保存 reminder-set，
+用实际原生 scheduler 列出完整任务、reconcile、执行差异、读回核实再 bind。
+已有配置（含关闭状态、自定义 key、旧未分型复盘）不因升级而改动或重复创建；
+旧复盘需明确迁移。安装器不发问题或创建任务，非交互安装留到首次合适的交互初始化询问。
+不要在本次代码升级／离线验收中激活真实任务。
 不猜工具参数，不把本地配置成功当成网关注册成功；不为了运行而装回旧提醒技能。
 没有用户授权的新任务时保持零任务，报告 scheduler=available 或 not_tested，不发送测试消息。
 实际手机投递需单独授权和现场测试。工具缺失/权限不足则明确报告，不安装作者后台。
@@ -128,7 +137,8 @@ weekly 是所选单个星期几触发的 last-week（上个完整周一至周日
 - 晚到记录回到实际发生日，受影响报告可重算，不重复发送该日／周通知。
 - 环境坏了就修安装，不临时 pip、换解释器、移除锁定参数或手改账本。
 
-模型行为另用源码 `diet-tracking-analysis/evals/daily-weekly-reviews.json` 人工验收；
+模型行为另用源码 `diet-tracking-analysis/evals/daily-weekly-reviews.json` 和
+`diet-tracking-analysis/evals/reminder-onboarding.json` 人工验收；
 它是待执行的场景清单，不是离线测试已验证的模型效果。没有实测时如实标为未验证。
 
 官方参考：

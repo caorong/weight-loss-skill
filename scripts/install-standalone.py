@@ -17,9 +17,11 @@ ROOT = Path(__file__).resolve().parents[1]
 FILES = ("SKILL.md", "scripts/meal-log.py", "scripts/self-test.py",
          "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py",
          "scripts/coach_review.py", "scripts/coach_review_reminders.py",
+         "scripts/coach_reminder_onboarding.py",
          "references/standalone-flow.md", "references/coach-flows.md", "references/coach-api.md",
          "references/native-reminders.md", "references/coach-review.schema.json",
-         "references/coach-reminder-settings.schema.json", "evals/daily-weekly-reviews.json", "pyproject.toml", "uv.lock", ".python-version")
+         "references/coach-reminder-settings.schema.json", "evals/daily-weekly-reviews.json",
+         "evals/reminder-onboarding.json", "pyproject.toml", "uv.lock", ".python-version")
 
 
 def reject_symlink(path, boundary):

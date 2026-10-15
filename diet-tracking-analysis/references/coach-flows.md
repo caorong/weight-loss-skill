@@ -41,10 +41,12 @@ Later leftovers/amount-eaten corrections update the existing food by ID/revision
 4. Save likes/allergies/preferences separately via preferences-set. Read-modify-
    merge list values; a patch replaces the specified list, not appends blindly.
 5. Confirm what was actually persisted. Do NOT bootstrap reminders or exports.
-6. When discussing review setup, reuse the known IANA timezone or ask if missing;
-   ask separately about daily opt-in + local time and weekly opt-in + one weekday
-   + local time. There is no default opt-in. Either may stay off, and both may be
-   changed, paused or disabled independently. This must not block ordinary logging.
+6. At first interactive setup, use reminder_onboarding and native-reminders.md's
+   seven-choice checklist: daily/weekly reviews, breakfast/lunch/dinner, weight
+   and exercise. Ask only unasked choices; preserve existing/answered entries.
+   Allow subset/all/skip; save choices before collecting schedules. Confirm local
+   times/days, IANA timezone and resolved destination before reminder-set/native
+   registration. No answer means off; this never blocks ordinary logging.
 
 Managed fields override only their explicitly named values. Legacy prose remains
 visible and unmodified. Do not interpret a missing health flag as a negative screen.
@@ -210,8 +212,14 @@ separate operations.
 
 ## Reminders
 
-Only after user opt-in with actual times, days, Agent and channel recipient, follow
-native-reminders.md. Food/weight/exercise reminders and independent daily/weekly
+At first interactive setup, follow native-reminders.md's durable seven-choice
+checklist: daily/weekly reviews, breakfast/lunch/dinner, weight and exercise.
+Record only explicit choices; persist offered/accepted/declined/skipped state.
+Allow subset/all/skip answers. Unanswered choices stay off and never block logging;
+refused/skipped choices are not repeatedly offered. Accepted choices wait for
+confirmed times, days, IANA timezone and resolved Agent/channel/recipient before
+reminder-set or native scheduling. Resume from context.reminder_onboarding and
+preserve existing arbitrary-key settings on upgrade. Food/weight/exercise reminders and independent daily/weekly
 reviews are supported. Daily runs on all seven weekdays; weekly runs on one chosen
 weekday. Legacy untyped review reminders keep last7 until explicit migration.
 When both are due at the same local time and route, one deterministic eligible
