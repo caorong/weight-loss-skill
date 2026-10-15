@@ -1,7 +1,7 @@
 # Weight Loss Skill — 本地减肥教练（standalone v5）
 
-> **GitHub v5 提交版本：** 本次改动基于已合并 PR #1 的 `main`（`af51bc2`），新分支为 `feat/local-coach-v5`。
-> 安装 AI 应使用该分支或对应提交的源码，先读取 `AI-INSTALL.md`。只有本次 PR 合并后，主分支才包含 v5。
+> **安装来源：** 使用 `main` 的当前源码或明确指定的提交，先读取 `AI-INSTALL.md`。
+> 测试尚未合并的 PR 时使用该 PR 的 head 分支／提交，并确认需要的文件已在 checkout 中；不要使用旧功能分支代替当前版本。
 > 独立版回归测试与模型行为验收分开；真实 OpenClaw／手机图片／原生提醒投递仍需在实际环境分层验收。
 
 本 fork 的目标是：**现有视觉模型负责理解，Python 负责真实记录；资料、计划、每日记录和复盘使用同一套本地数据。**
@@ -22,19 +22,25 @@
 | 每日复盘 | 只看当地今天：已记录饮食、当日目标、已完成运动及记录完整度，给有依据的食物取舍；不生成明日计划 |
 | 每周复盘 | 默认上个完整周一至周日：有数据支撑的趋势、重复问题和运动执行情况，保存 Markdown 和快照 |
 | 计划调整 | 周复盘可提出调整草稿；**确认后才生效**，日复盘不写计划，不自动降低热量或加大训练 |
-| 提醒/定时复盘 | 每日／每周分别自愿开启、改时间或关闭；本地配置 + 原生 OpenClaw scheduler，默认无任务 |
+| 提醒/定时复盘 | 首次初始化明确询问日／周复盘、三餐、体重、运动七项；可部分／全部选择，确认时间、时区和投递对象后才建任务 |
 
 提醒代码负责生成配置、比较网关现状、核验注册和发送前 gate；AI 用实际原生工具执行任务操作。
 **保存提醒配置 ≠ 已注册定时任务 ≠ 手机收到消息。** 三个状态分开验收。
 本仓库测试不向真实手机发送消息，不在你的 OpenClaw 自动创建任务。
 
+首次交互初始化会一次列出日复盘、周复盘、早餐／午餐／晚餐、体重、运动七项，
+可以部分开启、全部开启、全部不开或跳过。选择会保存，断开后可继续；未回答、拒绝、
+跳过均保持关闭，不在每次记餐反复询问。选择开启也先保持待配置，确认当地时间、
+IANA 时区、投递对象（周复盘还需星期几，运动还需运动日）后才创建原生任务。
+升级保留已有设置和 job 绑定，不自动启用或重复生成任务。
+
 ## 交给 AI 安装
 
 直接给安装 AI：
 
-> 请安装 caorong/weight-loss-skill 的 feat/local-coach-v5 分支；使用该分支的 v5 源码。
+> 请安装 caorong/weight-loss-skill 的 main 分支；如我指定了待测 PR，则使用该 PR 的 head 提交。
 > 先读 AI-INSTALL.md，使用 uv 安装独立本地教练入口，验证资料/饮食/体重/运动/计划/复盘和技能加载。
-> 不全量安装上游技能，不覆盖我已有档案，不关闭沙箱。提醒默认关闭；需要时再用原生 scheduler 设置并核验。
+> 不全量安装上游技能，不覆盖我已有档案，不关闭沙箱。提醒默认关闭；首次初始化询问七项是否开启；选择后确认时间、时区、投递对象，再用原生 scheduler 设置并核验。
 > 真实图片传递、模型生成效果或提醒投递未测试时，分别标明未验证。
 
 默认 **uv >= 0.10.0 + Python 3.13 系列**；解释器代码底线 3.10，第三方 Python 依赖仍为零。
@@ -42,8 +48,8 @@
 uv、Python 和保存路径必须在 Agent 的真实 exec 环境里可访问，不能只在另一个终端能用。
 
 ```bash
-# 获取 v5 分支（本次 PR 合并前不要用旧 main）。
-git clone --branch feat/local-coach-v5 https://github.com/caorong/weight-loss-skill.git
+# 获取当前已合并版本；测试待合并 PR 时改用已核实的 PR head 分支／提交。
+git clone --branch main https://github.com/caorong/weight-loss-skill.git
 cd weight-loss-skill
 
 # 以下路径必须由安装 AI 查询实际 Agent 配置后替换。
@@ -88,7 +94,7 @@ commands.coach   → coach.py（资料、体重、运动、计划、复盘、提
 | `EXERCISE-PLAN.md` | 确认过的训练计划可读投影 | 同上，无 S3/卡片 |
 | `data/coach-reviews.json` | 每次复盘的数据快照、模型分析、版本 ID | `review-save`；同周期可保存多个版本 |
 | `data/reports/coach-review-{daily\|weekly}-START-END.md` | 对应类型／区间最新可读复盘；旧 custom 文件名不变 | 本地 Markdown，直接文字回复也可 |
-| `data/coach-reminders.json` | 想要的提醒设置、暂停状态、核验过的原生 job ID/hash | 配置/注册/送达分开处理 |
+| `data/coach-reminders.json` | 七项初始化选择、想要的提醒设置、暂停状态、核验过的原生 job ID/hash | 配置/注册/送达分开处理 |
 | `data/coach-review-deliveries.json` | 日／周复盘通知的当地日期或周期预留记录 | gate 发送前去重；不是消息送达证明 |
 | `data/requests/*.json` | 每个操作独立的短期输入文件 | 使用新 context 返回的唯一路径；失败待重试时保留 |
 | `data/meal-ledger-state.json` | 饮食请求回执和中断恢复 journal | 仅 meal-log.py 维护 |
@@ -192,8 +198,10 @@ this-week 是本周一至今，last-week 是上个完整周。筛选负责选数
 
 AI 按 `references/native-reminders.md` 操作：
 
-1. 确认 IANA 时区，分别询问每日是否开启及时间、每周是否开启及星期／时间；
-   经用户同意后保存明确的 Agent/channel/to。任一项拒绝都不影响记餐。
+1. 首次初始化明确询问日复盘、周复盘、三餐、体重、运动七项是否开启，允许部分／全部／跳过。
+   通过 reminder-onboarding-set 保存明确选择；不回答或拒绝不阻碍记餐、不反复追问。
+   选中后确认时间／日期、IANA 时区、明确的 Agent/channel/to，再保存 reminder-set；
+   周复盘需一个星期几，运动需运动日。已有设置不因升级被重问、改动或重复创建。
 2. 读取完整原生任务列表，用 reminder-sync-plan 生成差异。
 3. 用实际原生 scheduler 工具添加或更新，重新读取任务并 reminder-bind 核实。
 4. 触发时重新读本地状态和时间，检查暂停、停用、是否已记录、是否超时，再输出文字。
@@ -250,12 +258,14 @@ uv run --locked --project diet-tracking-analysis python -m unittest discover -s 
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_standalone_install.py' -v
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_uv_install.py' -v
 uv run --locked --project diet-tracking-analysis python -m unittest discover -s tests -p 'test_coach_integration.py' -v
+uv run --locked --project diet-tracking-analysis python -m unittest tests.test_reminder_onboarding -v
 ```
 
 这些是独立版回归测试；原仓库遗留测试不代表新入口的支持范围。
 测试全部用合成数据/临时 workspace；native job 列表为模拟数据，未注册实际任务。
 真实 OpenClaw 加载、图片传递、模型规划效果、手机提醒投递必须由安装 AI 分别验收。
-`diet-tracking-analysis/evals/daily-weekly-reviews.json` 是人工／真实模型验收场景，
+`diet-tracking-analysis/evals/daily-weekly-reviews.json` 和 `evals/reminder-onboarding.json`
+是复盘与七项初始化的人工／真实模型验收场景，
 不是已经运行的模型测评；离线脚本通过不证明建议质量、真实消息合并或手机投递效果。
 
 接口详见安装后随附的 standalone-flow.md、coach-api.md、coach-flows.md、native-reminders.md。

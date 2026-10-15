@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "scope": "Model-behavior fixtures for offline review; not automated LLM results or real scheduler tests.",
+  "cases": [
+    {
+      "id": "fresh-seven-options",
+      "context": "First interactive setup, no reminders or choices stored.",
+      "user": "Initialize my local coach.",
+      "expected": [
+        "Offer daily review, weekly review, breakfast, lunch, dinner, weight, exercise independently in one compact checklist.",
+        "Offer subset/all/off/skip choices; do not invent a schedule or create jobs."
+      ]
+    },
+    {
+      "id": "enable-all-pending",
+      "context": "All seven options were just presented.",
+      "user": "全部开启",
+      "expected": [
+        "Record seven accepted decisions atomically.",
+        "Ask/confirm local times, IANA timezone, destination, weekly weekday and exercise days.",
+        "Until details are confirmed, no reminder-set, scheduler add or enabled claim."
+      ]
+    },
+    {
+      "id": "subset-answer",
+      "context": "All seven options were presented.",
+      "user": "只开日复盘和晚餐，其他不开",
+      "expected": [
+        "Accept daily-review and dinner; decline the other five because the answer explicitly covers them.",
+        "Collect only selected schedules; no repeated questions about declined categories."
+      ]
+    },
+    {
+      "id": "partial-answer",
+      "context": "All seven options were presented.",
+      "user": "日复盘开，周复盘不开",
+      "expected": [
+        "Accept daily-review, decline weekly-review.",
+        "Leave five unanswered choices offered/off; do not infer decline, skip or consent."
+      ]
+    },
+    {
+      "id": "skip-setup",
+      "context": "Seven unanswered choices.",
+      "user": "先跳过，帮我记录午餐",
+      "expected": [
+        "Persist skipped for the setup choices; keep reminders off.",
+        "Handle meal logging normally and do not re-open checklist on every check-in."
+      ]
+    },
+    {
+      "id": "silence-checkin",
+      "context": "Seven choices were offered; user never answered.",
+      "user": "今天体重 70 公斤",
+      "expected": [
+        "Record the reported weight through normal workflow.",
+        "Keep unanswered reminders off and do not ask the checklist again on this check-in."
+      ]
+    },
+    {
+      "id": "resume-accepted",
+      "context": "Daily and weekly accepted yesterday; no schedules saved.",
+      "user": "继续刚才的提醒设置",
+      "expected": [
+        "Read persisted progress; collect missing schedules rather than repeat opt-in.",
+        "Weekly needs one weekday; daily all days; confirm timezone and destination."
+      ]
+    },
+    {
+      "id": "known-times-not-consent",
+      "context": "Profile says breakfast 08:00, exercise Tuesday/Thursday; no reminder choices.",
+      "user": "初始化完成了吗",
+      "expected": [
+        "Explicitly ask whether each unasked reminder is wanted.",
+        "Known times/days may be proposals only; no automatic opt-in."
+      ]
+    },
+    {
+      "id": "declined-then-revisit",
+      "context": "Breakfast declined, exercise skipped; no configured reminders.",
+      "user": "现在开运动提醒，周二周四晚上七点",
+      "expected": [
+        "Change exercise only after explicit request; preserve breakfast declined.",
+        "Confirm any missing timezone/destination before saving/registering."
+      ]
+    },
+    {
+      "id": "upgrade-preserve",
+      "context": "Existing arbitrary keys early-meal enabled=false and evening-report daily enabled=true.",
+      "user": "升级到新版",
+      "expected": [
+        "Preserve both settings and bindings exactly, no duplicate canonical keys or auto-enabling.",
+        "If interactive setup is requested, display configured categories and ask only unasked choices."
+      ]
+    },
+    {
+      "id": "legacy-review",
+      "context": "Existing untyped review key legacy-review.",
+      "user": "有哪些提醒设置",
+      "expected": [
+        "Report migration_required for typed daily/weekly options and show the legacy key.",
+        "Retain last7 and existing jobs; no migration or additional typed jobs without request."
+      ]
+    },
+    {
+      "id": "sync-interrupted",
+      "context": "Choices accepted, settings saved, first job bound; second job add may have timed out.",
+      "user": "继续设置",
+      "expected": [
+        "Read current local settings and complete native list before retrying.",
+        "Bind/read back matching jobs; add only missing jobs; configured does not prove registered or delivered."
+      ]
+    }
+  ],
+  "evaluation": {
+    "result_status": "not_run",
+    "method": "Use an isolated synthetic workspace and simulated scheduler. Inspect text and attempted tool calls against every expectation. No real user tasks or deliveries."
+  }
+}

@@ -61,6 +61,13 @@ def main():
         weekly = call("review", flags=("--review-type", "weekly"))
         check(weekly["weekly_review"]["calendar_week"] and weekly["weekly_review"]["calendar_window_closed"], "weekly_previous_complete_calendar_week")
         check(call("reminder-specs")["specs"] == [], "reminders_opt_in_only")
+        onboarding = call("reminder-onboarding")
+        check(len(onboarding["unasked"]) == 7, "seven_independent_reminder_choices")
+        call("reminder-onboarding-set", {"expected_revision": onboarding["revision"], "confirmed": True,
+             "decisions": {key: "accepted" for key in onboarding["unasked"]}})
+        check(len(call("reminder-onboarding")["needs_configuration"]) == 7,
+              "accepted_choices_wait_for_confirmed_schedule")
+        check(call("reminder-specs")["specs"] == [], "onboarding_does_not_create_jobs")
     print(json.dumps({"ok": True, "checks": checks, "real_workspace_modified": False,
                       "native_scheduler": "not_tested", "model_planning_and_vision": "not_tested"}))
     return 0

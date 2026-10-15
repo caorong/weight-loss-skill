@@ -36,8 +36,8 @@ TARGETS = {"calories", "protein", "carbs", "fat"}
 ACTIONS = {"context", "profile-set", "preferences-set", "weight-add", "weight-update", "weight-delete",
            "exercise-add", "exercise-update", "exercise-delete", "measurements", "plan-save", "plan-activate",
            "plans", "review", "review-save", "reminder-set", "reminders", "reminder-specs", "reminder-sync-plan",
-           "reminder-bind", "reminder-gate"}
-READS = {"context", "measurements", "plans", "review", "reminders", "reminder-specs", "reminder-gate"}
+           "reminder-bind", "reminder-gate", "reminder-onboarding", "reminder-onboarding-set"}
+READS = {"context", "measurements", "plans", "review", "reminders", "reminder-specs", "reminder-gate", "reminder-onboarding"}
 FIELDS = {
     "profile-set": {"fields", "expected_revision"}, "preferences-set": {"fields", "expected_revision"},
     "weight-add": {"value", "unit", "date", "observed_at", "fasting", "note"},
@@ -50,6 +50,7 @@ FIELDS = {
     "review-save": {"start", "end", "expected_snapshot", "analysis", "review_type"},
     "reminder-set": {"key", "settings", "expected_revision", "confirmed"},
     "reminder-bind": {"key", "observed_job", "spec_hash"},
+    "reminder-onboarding-set": {"offered", "decisions", "expected_revision", "confirmed"},
 }
 
 
@@ -190,6 +191,10 @@ class Coach:
         need(data.get("version") == 1 and isinstance(data.get("items"), dict), "Invalid reminders registry")
         return data
 
+    def reminder_onboarding(self):
+        from coach_reminder_onboarding import view
+        return view(self.reminders())
+
     def reminder_spec(self, key, settings):
         route = settings["route"]
         hour, minute = map(int, settings["time"].split(":"))
@@ -283,7 +288,8 @@ class Coach:
                         "active_plans": {k: self.active(plans, k, today) for k in KINDS},
                         "scheduled_plans": [p for p in plans["entries"] if p["status"] == "confirmed" and p["effective_date"] > today],
                         "latest_weight": (self.weight_rows() or [None])[-1],
-                        "reminders_revision": self.reminders()["revision"]}
+                        "reminders_revision": self.reminders()["revision"],
+                        "reminder_onboarding": self.reminder_onboarding()}
             if action == "measurements":
                 a, b = self.window(start, end, period or "last7")
                 return {"ok": True, "start": a, "end": b, "weights": [r for r in self.weight_rows() if a <= r["date"] <= b],
@@ -296,6 +302,8 @@ class Coach:
                 return {"ok": True, **self.report(*self.window(start, end, chosen), review_type=review_type)}
             if action == "reminders":
                 return {"ok": True, **self.reminders(), "native_status": "verify_with_gateway"}
+            if action == "reminder-onboarding":
+                return {"ok": True, **self.reminder_onboarding()}
             if action == "reminder-specs":
                 return {"ok": True, "specs": self.specs(), "native_status": "not_applied"}
             if action == "reminder-gate":
@@ -357,6 +365,11 @@ class Coach:
                     f"Weight days: {s['weight_days']}\nExercise minutes: {s['exercise_minutes']}\n"
                     f"\n{analysis}\n\nEstimates and incomplete records; no automatic target change.\n")
             return {"data/coach-reviews.json": packed(history), path: body}, {"review_id": record["id"], "path": path, "summary": s}
+        if action == "reminder-onboarding-set":
+            from coach_reminder_onboarding import update
+            data = self.reminders()
+            revision(p, data)
+            return update(self, data, p)
         if action == "reminder-set":
             data = self.reminders()
             revision(p, data)

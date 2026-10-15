@@ -31,7 +31,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(files, sorted([".python-version", "SKILL.md", "pyproject.toml", "references/standalone-flow.md",
               "references/coach-api.md", "references/coach-flows.md", "references/native-reminders.md", "runtime.json",
               "references/coach-review.schema.json", "references/coach-reminder-settings.schema.json",
-              "evals/daily-weekly-reviews.json", "scripts/coach_review.py", "scripts/coach_review_reminders.py", "scripts/meal-log.py", "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py", "scripts/self-test.py", "uv.lock"]))
+              "evals/daily-weekly-reviews.json", "evals/reminder-onboarding.json", "scripts/coach_reminder_onboarding.py", "scripts/coach_review.py", "scripts/coach_review_reminders.py", "scripts/meal-log.py", "scripts/coach.py", "scripts/coach_store.py", "scripts/self-test-coach.py", "scripts/self-test.py", "uv.lock"]))
         config = json.loads((base / "runtime.json").read_text())
         self.assertEqual(config["schema_version"], 3)
         self.assertIn("coach", config["commands"])
